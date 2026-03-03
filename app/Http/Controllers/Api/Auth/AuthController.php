@@ -9,15 +9,12 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Validation\ValidationException;
-
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 
 class AuthController extends Controller
 {
-    // ... existing register, login, logout methods ...
-
     public function forgotPassword(Request $request)
     {
         $request->validate(['email' => 'required|email|exists:users,email']);
@@ -33,7 +30,6 @@ class AuthController extends Controller
             ]
         );
 
-        // Send Email (You will see this in Mailtrap)
         Mail::send('emails.forgot-password', ['token' => $token], function($message) use($request){
             $message->to($request->email);
             $message->subject('Reset Password Notification');
@@ -63,11 +59,11 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
         $user->update(['password' => Hash::make($request->password)]);
 
-        // Delete the token after use
         DB::table('password_reset_tokens')->where(['email' => $request->email])->delete();
 
         return response()->json(['message' => 'Your password has been reset!']);
     }
+
     public function register(Request $request)
     {
         $request->validate([
@@ -139,7 +135,7 @@ class AuthController extends Controller
                 'email' => $socialUser->getEmail(),
                 'provider_id' => $socialUser->getId(),
                 'provider_name' => $provider,
-                'password' => null, // No password for social login
+                'password' => null,
             ]);
         }
 
@@ -149,26 +145,6 @@ class AuthController extends Controller
             'access_token' => $token,
             'token_type' => 'Bearer',
             'user' => $user,
-        ]);
-    }
-
-    public function updateOnboarding(Request $request)
-    {
-        $user = $request->user();
-        
-        $request->validate([
-            'age' => 'required|integer|min:10',
-            'height' => 'required|integer|min:100',
-            'weight' => 'required|numeric|min:30',
-            'fitness_goal' => 'required|string',
-            'workout_split' => 'required|string',
-        ]);
-
-        $user->update($request->all());
-
-        return response()->json([
-            'message' => 'Profile updated successfully',
-            'user' => $user
         ]);
     }
 }
