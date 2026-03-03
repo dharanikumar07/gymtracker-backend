@@ -4,17 +4,16 @@ namespace App\Models;
 
 use App\Traits\UuidTrait;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
-class UserFitnessProfile extends Model
+class ExpenseTracker extends Model
 {
-    use UuidTrait;
+    use SoftDeletes, UuidTrait;
 
     protected $guarded = [];
 
     protected $casts = [
-        'data' => 'array',
-        'steps_completed' => 'array',
-        'is_onboarding_completed' => 'boolean'
+        'data' => 'array'
     ];
 
     public function user()

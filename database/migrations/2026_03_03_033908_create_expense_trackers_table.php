@@ -11,13 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('user_fitness_profiles', function (Blueprint $table) {
+        Schema::create('expense_trackers', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->uuid('user_uuid');
-            $table->boolean('is_onboarding_completed')->default(false);
             $table->json('data')->nullable();
-            $table->jsonb('steps_completed')->nullable();
             $table->softDeletes();
             $table->timestamps();
 
@@ -30,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('user_fitness_profiles');
+        Schema::dropIfExists('expense_trackers');
     }
 };

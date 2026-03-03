@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\Auth\AuthController;
+use App\Http\Controllers\Api\UserProfileController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -15,12 +16,11 @@ Route::get('/auth/callback/{provider}', [AuthController::class, 'handleProviderC
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
+    Route::get('/me', [UserProfileController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
     
     // Onboarding and Profile Routes
-    Route::get('/profile', [\App\Http\Controllers\Api\UserProfileController::class, 'getProfile']);
-    Route::post('/onboarding/step', [\App\Http\Controllers\Api\UserProfileController::class, 'updateStep']);
+    Route::get('/profile', [UserProfileController::class, 'getProfile']);
+    Route::get('/onboarding/data', [UserProfileController::class, 'getOnboardingData']);
+    Route::post('/onboarding/complete', [UserProfileController::class, 'completeOnboarding']);
 });

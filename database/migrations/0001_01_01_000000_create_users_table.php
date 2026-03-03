@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+            $table->uuid('uuid')->unique();
             $table->string('name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
@@ -22,7 +23,7 @@ return new class extends Migration
             // Social Login fields
             $table->string('provider_id')->nullable();
             $table->string('provider_name')->nullable();
-            
+            $table->softDeletes();
             $table->timestamps();
         });
 
