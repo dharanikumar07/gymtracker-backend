@@ -16,7 +16,8 @@ class MeResource extends JsonResource
             'uuid' => $this->uuid,
             'name' => $this->name,
             'email' => $this->email,
-            'is_onboarding_completed' => (bool) ($this->fitnessProfile->is_onboarding_completed ?? false),
+            'is_email_verified' => !empty($this->email_verified_at),
+            'is_onboarding_completed' => $this->is_onboarding_completed ?? false,
         ];
     }
 }

@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -14,13 +13,14 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
+
             $table->string('name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password')->nullable(); // Nullable for social login
+            $table->string('password')->nullable();
             $table->rememberToken();
-            
-            // Social Login fields
+            $table->boolean('is_onboarding_completed')->default(true);
+            $table->jsonb('user_fitness_data')->nullable();
             $table->string('provider_id')->nullable();
             $table->string('provider_name')->nullable();
             $table->softDeletes();
