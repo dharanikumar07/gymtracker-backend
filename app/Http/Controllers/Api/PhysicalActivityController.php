@@ -23,39 +23,52 @@ class PhysicalActivityController extends Controller
             'duration_units' => ['seconds', 'minutes', 'hours']
         ];
     }
-
+    
     /**
-     * Get the current active routine/schedule.
+     * Get the current active routine or a specific routine by uuid.
      */
-    public function getRoutine()
+    public function getRoutine(Request $request)
     {
         try {
             $user = Auth::user();
+            $planUuid = $request->query('plan_uuid');
             
-            $activePlan = Plan::where('user_uuid', $user->uuid)
-                ->where('type', 'physical_activity')
-                ->where('is_active', true)
-                ->with(['physicalActivitySlots' => function($query) {
+            $query = Plan::where('user_uuid', $user->uuid)
+                ->where('type', 'physical_activity');
+
+            if ($planUuid) {
+                $query->where('uuid', $planUuid);
+            } else {
+                $query->where('is_active', true);
+            }
+
+            $plan = $query->with(['physicalActivitySlots' => function($query) {
                     $query->orderBy('exercise_order');
                 }])
                 ->first();
 
-            if (!$activePlan) {
-                return Response::json(['message' => 'No active plan found'], HttpFoundationResponse::HTTP_NOT_FOUND);
+            if (!$plan) {
+                return Response::json(['message' => 'Plan not found'], HttpFoundationResponse::HTTP_NOT_FOUND);
             }
+
+            // Get all available plans for the dropdown
+            $availablePlans = Plan::where('user_uuid', $user->uuid)
+                ->where('type', 'physical_activity')
+                ->select('uuid as plan_uuid', 'name')
+                ->get();
 
             $routine = [];
             $days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
             
             foreach ($days as $day) {
-                $daySlots = $activePlan->physicalActivitySlots->where('day', $day);
+                $daySlots = $plan->physicalActivitySlots->where('day', $day);
                 
                 $routine[ucfirst($day)] = [
                     'workouts' => $daySlots->map(function($slot) {
                         return [
                             'uuid' => $slot->uuid,
-                            'name' => $slot->{'exercise_name'},
-                            'order' => $slot->{'exercise_order'},
+                            'name' => $slot->{' exercise_name'},
+                            'order' => $slot->{' exercise_order'},
                             'metrics' => [
                                 'type' => $slot->metrics_type,
                                 'data' => $slot->metrics_data
@@ -68,12 +81,14 @@ class PhysicalActivityController extends Controller
 
             return Response::json([
                 'plan' => [
-                    'uuid' => $activePlan->uuid,
-                    'name' => $activePlan->name,
-                    'start_date' => $activePlan->start_date,
-                    'end_date' => $activePlan->end_date,
+                    'uuid' => $plan->uuid,
+                    'name' => $plan->name,
+                    'start_date' => $plan->start_date,
+                    'end_date' => $plan->end_date,
+                    'is_active' => $plan->is_active,
                 ],
                 'routine' => $routine,
+                'available_plans' => $availablePlans,
                 'units' => $this->getAvailableUnits()
             ], HttpFoundationResponse::HTTP_OK);
 
