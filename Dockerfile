@@ -37,5 +37,5 @@ USER $user
 
 EXPOSE 8000
 
-# Using php artisan serve
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+# Run from dir that contains artisan (works whether /var/www is backend or repo root with gym-tracker-backend inside)
+CMD ["sh", "-c", "if [ -f /var/www/artisan ]; then cd /var/www; else cd /var/www/gym-tracker-backend; fi && exec php artisan serve --host=0.0.0.0 --port=8000"]
