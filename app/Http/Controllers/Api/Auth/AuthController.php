@@ -4,22 +4,21 @@ namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Traits\AuthTokenTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Auth\Events\Registered;
 use App\Http\Resources\MeResource;
-use Carbon\Carbon;
 use App\Http\Helpers\Helper;
 use Illuminate\Support\Facades\Response;
 use Symfony\Component\HttpFoundation\Response as HttpFoundationResponse;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
 {
+    use AuthTokenTrait;
+
     /**
      * Get the authenticated user.
      */
@@ -28,16 +27,8 @@ class AuthController extends Controller
         try {
             return new MeResource(Auth::user());
         } catch (\Exception $exception) {
-            Helper::logError(
-                'Unable to Get user',
-                [__CLASS__, __FUNCTION__],
-                $exception
-            );
-
-            return Response::json(
-                ['error' => 'An error occurred', 'message' => $exception->getMessage()],
-                HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR
-            );
+            Helper::logError('Unable to Get user', [__CLASS__, __FUNCTION__], $exception);
+            return Response::json(['error' => 'An error occurred'], 500);
         }
     }
 
@@ -89,102 +80,55 @@ class AuthController extends Controller
             $user = User::where('email', $request->email)->first();
 
             if (!$user || !Hash::check($request->password, $user->password)) {
-                return Response::json([
-                    'message' => 'Invalid login details'
-                ], HttpFoundationResponse::HTTP_UNAUTHORIZED);
+                return Response::json(['message' => 'Invalid login details'], 401);
             }
 
             if (!$user->hasVerifiedEmail()) {
-                return Response::json([
-                    'message' => 'Your email address is not verified.'
-                ], HttpFoundationResponse::HTTP_FORBIDDEN);
+                return Response::json(['message' => 'Your email address is not verified.'], 403);
             }
 
             return $this->issueTokens($user);
         } catch (\Exception $exception) {
-            Helper::logError(
-                'Unable to login user',
-                [__CLASS__, __FUNCTION__],
-                $exception,
-                $request->toArray()
-            );
-
-            return Response::json(
-                ['error' => 'An error occurred', 'message' => $exception->getMessage()],
-                HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR
-            );
+            Helper::logError('Unable to login user', [__CLASS__, __FUNCTION__], $exception);
+            return Response::json(['error' => 'An error occurred'], 500);
         }
     }
 
-    private function issueTokens(User $user)
-    {
-        // Access token expires in 30 minutes
-        $accessToken = $user->createToken('access_token', ['*'], now()->addMinutes(30))->plainTextToken;
-        
-        // Refresh token expires in 2 days
-        $refreshToken = $user->createToken('refresh_token', ['refresh-token'], now()->addDays(2))->plainTextToken;
-
-        return Response::json([
-            'access_token' => $accessToken,
-            'refresh_token' => $refreshToken,
-            'token_type' => 'Bearer',
-            'user' => [
-                'name' => $user->name,
-                'email' => $user->email,
-                'uuid' => $user->uuid,
-                'is_email_verified' => !empty($user->email_verified_at),
-                'is_onboarding_completed' => $user->is_onboarding_completed,
-            ]
-        ], HttpFoundationResponse::HTTP_OK);
-    }
-
+    /**
+     * Refresh Token.
+     */
     public function refresh(Request $request)
     {
         try {
-            $token = $request->user()->currentAccessToken();
+            $bearerToken = $request->bearerToken();
+            if (!$bearerToken) return Response::json(['message' => 'Refresh token missing'], 401);
 
-            if ($token->name !== 'refresh_token') {
-                return Response::json(['message' => 'Invalid token type'], HttpFoundationResponse::HTTP_UNAUTHORIZED);
+            $token = PersonalAccessToken::findToken($bearerToken);
+
+            if (!$token || $token->name !== 'refresh_token' || ($token->expires_at && $token->expires_at->isPast())) {
+                return Response::json(['message' => 'Invalid or expired refresh token'], 401);
             }
 
-            $request->user()->tokens()->delete();
+            $user = $token->tokenable;
+            $token->delete();
 
-            return $this->issueTokens($request->user());
+            return $this->issueTokens($user);
         } catch (\Exception $exception) {
-            Helper::logError(
-                'Unable to refresh token',
-                [__CLASS__, __FUNCTION__],
-                $exception,
-                $request->toArray()
-            );
-
-            return Response::json(
-                ['error' => 'An error occurred', 'message' => $exception->getMessage()],
-                HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR
-            );
+            Helper::logError('Unable to refresh token', [__CLASS__, __FUNCTION__], $exception);
+            return Response::json(['error' => 'An error occurred'], 500);
         }
     }
 
+    /**
+     * Logout.
+     */
     public function logout(Request $request)
     {
         try {
-            $request->user()->tokens()->delete();
-
-            return Response::json([
-                'message' => 'Logged out successfully'
-            ], HttpFoundationResponse::HTTP_OK);
+            $request->user()->currentAccessToken()->delete();
+            return Response::json(['message' => 'Logged out successfully'], 200);
         } catch (\Exception $exception) {
-            Helper::logError(
-                'Unable to logout',
-                [__CLASS__, __FUNCTION__],
-                $exception,
-                $request->toArray()
-            );
-
-            return Response::json(
-                ['error' => 'An error occurred', 'message' => $exception->getMessage()],
-                HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR
-            );
+            return Response::json(['error' => 'An error occurred'], 500);
         }
     }
 
@@ -275,39 +219,24 @@ class AuthController extends Controller
     {
         try {
             $request->validate([
-                'email' => 'required|email|exists:users,email',
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:users',
                 'password' => 'required|string|min:8|confirmed',
-                'token' => 'required|string'
             ]);
 
-            $resetData = DB::table('password_reset_tokens')
-                ->where([
-                    'email' => $request->email,
-                    'token' => $request->token,
-                ])->first();
+            $user = User::create([
+                'uuid' => (string) Str::uuid(),
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'is_onboarding_completed' => false,
+            ]);
 
-            if (!$resetData) {
-                return Response::json(['message' => 'Invalid token or email'], HttpFoundationResponse::HTTP_UNAUTHORIZED);
-            }
+            event(new \Illuminate\Auth\Events\Registered($user));
 
-            $user = User::where('email', $request->email)->first();
-            $user->update(['password' => Hash::make($request->password)]);
-
-            DB::table('password_reset_tokens')->where(['email' => $request->email])->delete();
-
-            return Response::json(['message' => 'Your password has been reset!'], HttpFoundationResponse::HTTP_OK);
+            return Response::json(['message' => 'User registered successfully.'], 201);
         } catch (\Exception $exception) {
-            Helper::logError(
-                'Unable to reset password',
-                [__CLASS__, __FUNCTION__],
-                $exception,
-                $request->toArray()
-            );
-
-            return Response::json(
-                ['error' => 'An error occurred', 'message' => $exception->getMessage()],
-                HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR
-            );
+            return Response::json(['error' => 'An error occurred'], 500);
         }
     }
 }
