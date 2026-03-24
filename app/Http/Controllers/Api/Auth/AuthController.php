@@ -41,18 +41,21 @@ class AuthController extends Controller
                 'password' => 'required|string|min:8|confirmed',
             ]);
 
-            $user = User::create([
-                'uuid' => (string) Str::uuid(),
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-                'is_onboarding_completed' => false,
-            ]);
+            $user = null;
+            DB::transaction(function () use ($request, &$user) {
+                $user = User::create([
+                    'uuid' => (string) Str::uuid(),
+                    'name' => $request->name,
+                    'email' => $request->email,
+                    'password' => Hash::make($request->password),
+                    'is_onboarding_completed' => false,
+                ]);
 
-            event(new Registered($user));
+                $user->sendVeirfyEMailTOUser();
+            });
 
             return Response::json([
-                'message' => 'User registered successfully.'
+                'message' => 'User registered successfully. Verification email sent.'
             ], HttpFoundationResponse::HTTP_CREATED);
         } catch (\Exception $exception) {
             Helper::logError(

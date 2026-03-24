@@ -9,6 +9,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Mail;
 
 class User extends Authenticatable
 {
@@ -63,5 +64,16 @@ class User extends Authenticatable
     public function physicalActivityPlan()
     {
         return $this->hasOne(Plan::class, 'user_uuid', 'uuid')->where('type', 'physical_activity')->where('is_active', true);
+    }
+
+    public function sendVeirfyEMailTOUser(): void
+    {
+        $frontendUrl = env('FRONTEND_URL', 'http://localhost:6500');
+        $verificationUrl = $frontendUrl . '/verify-email/' . $this->uuid . '/' . sha1($this->getEmailForVerification());
+
+        Mail::send('emails.custom-verify-email', ['url' => $verificationUrl], function ($message) {
+            $message->to($this->email);
+            $message->subject('Verify Email Address');
+        });
     }
 }

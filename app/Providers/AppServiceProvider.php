@@ -23,7 +23,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         VerifyEmail::createUrlUsing(function ($notifiable) {
-            $frontendUrl = env('FRONTEND_URL', 'http://localhost:5174');
+            $frontendUrl = env('FRONTEND_URL', 'http://localhost:6500');
             
             return $frontendUrl . '/verify-email/' . $notifiable->uuid . '/' . sha1($notifiable->getEmailForVerification());
         });
