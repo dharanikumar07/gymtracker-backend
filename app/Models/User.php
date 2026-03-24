@@ -66,7 +66,7 @@ class User extends Authenticatable
         return $this->hasOne(Plan::class, 'user_uuid', 'uuid')->where('type', 'physical_activity')->where('is_active', true);
     }
 
-    public function sendVeirfyEMailTOUser(): void
+    public function sendVeirfyEmailTOUser(): void
     {
         $frontendUrl = env('FRONTEND_URL', 'http://localhost:6500');
         $verificationUrl = $frontendUrl . '/verify-email/' . $this->uuid . '/' . sha1($this->getEmailForVerification());
@@ -74,6 +74,14 @@ class User extends Authenticatable
         Mail::send('emails.custom-verify-email', ['url' => $verificationUrl], function ($message) {
             $message->to($this->email);
             $message->subject('Verify Email Address');
+        });
+    }
+
+    public function sendForgotPasswordEmailToUser(string $token): void
+    {
+        Mail::send('emails.forgot-password', ['token' => $token, 'email' => $this->email], function ($message) {
+            $message->to($this->email);
+            $message->subject('Reset Password Notification');
         });
     }
 }

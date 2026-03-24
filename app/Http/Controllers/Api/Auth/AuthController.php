@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\PasswordResetToken;
 use App\Models\User;
 use App\Traits\AuthTokenTrait;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -42,22 +44,24 @@ class AuthController extends Controller
             ]);
 
             $user = null;
-            DB::transaction(function () use ($request, &$user) {
-                $user = User::create([
-                    'uuid' => (string) Str::uuid(),
-                    'name' => $request->name,
-                    'email' => $request->email,
-                    'password' => Hash::make($request->password),
-                    'is_onboarding_completed' => false,
-                ]);
+            DB::beginTransaction();
 
-                $user->sendVeirfyEMailTOUser();
-            });
+            $user = User::create([
+                'uuid' => (string) Str::uuid(),
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'is_onboarding_completed' => false,
+            ]);
+
+            $user->sendVeirfyEmailTOUser();
+            DB::commit();
 
             return Response::json([
                 'message' => 'User registered successfully. Verification email sent.'
             ], HttpFoundationResponse::HTTP_CREATED);
         } catch (\Exception $exception) {
+            DB::rollBack();
             Helper::logError(
                 'Unable to register user',
                 [__CLASS__, __FUNCTION__],
@@ -104,7 +108,8 @@ class AuthController extends Controller
     {
         try {
             $bearerToken = $request->bearerToken();
-            if (!$bearerToken) return Response::json(['message' => 'Refresh token missing'], 401);
+            if (!$bearerToken)
+                return Response::json(['message' => 'Refresh token missing'], 401);
 
             $token = PersonalAccessToken::findToken($bearerToken);
 
@@ -160,7 +165,7 @@ class AuthController extends Controller
 
             $tokenData = $this->issueTokens($user);
             $content = $tokenData->getOriginalContent();
-            
+
             return Response::json([
                 'message' => 'Email verified successfully.',
                 'already_verified' => false,
@@ -184,23 +189,27 @@ class AuthController extends Controller
     public function forgotPassword(Request $request)
     {
         try {
-            $request->validate(['email' => 'required|email|exists:users,email']);
+            $request->validate(['email' => 'required|email']);
+
+            $user = User::where('email', $request->email)->first();
+            if (!$user) {
+                return Response::json(
+                    ['message' => 'User not found.'],
+                    HttpFoundationResponse::HTTP_NOT_FOUND
+                );
+            }
 
             $token = Str::random(64);
 
-            DB::table('password_reset_tokens')->updateOrInsert(
+            PasswordResetToken::updateOrCreate(
                 ['email' => $request->email],
                 [
-                    'email' => $request->email,
                     'token' => $token,
-                    'created_at' => now()
+                    'created_at' => now(),
                 ]
             );
 
-            Mail::raw("Your password reset token is: $token", function($message) use($request){
-                $message->to($request->email);
-                $message->subject('Reset Password Notification');
-            });
+            $user->sendForgotPasswordEmailToUser($token);
 
             return Response::json(['message' => 'We have e-mailed your password reset token!'], HttpFoundationResponse::HTTP_OK);
         } catch (\Exception $exception) {
@@ -222,24 +231,43 @@ class AuthController extends Controller
     {
         try {
             $request->validate([
-                'name' => 'required|string|max:255',
-                'email' => 'required|string|email|max:255|unique:users',
+                'email' => 'required|email|exists:users,email',
                 'password' => 'required|string|min:8|confirmed',
+                'token' => 'required|string',
             ]);
 
-            $user = User::create([
-                'uuid' => (string) Str::uuid(),
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-                'is_onboarding_completed' => false,
-            ]);
+            $resetToken = PasswordResetToken::where('email', $request->email)
+                ->where('token', $request->token)
+                ->first();
 
-            event(new \Illuminate\Auth\Events\Registered($user));
+            if (!$resetToken) {
+                return Response::json(
+                    ['message' => 'Invalid token or email.'],
+                    HttpFoundationResponse::HTTP_UNAUTHORIZED
+                );
+            }
 
-            return Response::json(['message' => 'User registered successfully.'], 201);
+            $user = User::where('email', $request->email)->firstOrFail();
+            $user->update(['password' => Hash::make($request->password)]);
+
+            PasswordResetToken::where('email', $request->email)->delete();
+
+            return Response::json(
+                ['message' => 'Your password has been reset successfully.'],
+                HttpFoundationResponse::HTTP_OK
+            );
         } catch (\Exception $exception) {
-            return Response::json(['error' => 'An error occurred'], 500);
+            Helper::logError(
+                'Unable to reset password',
+                [__CLASS__, __FUNCTION__],
+                $exception,
+                $request->toArray()
+            );
+
+            return Response::json(
+                ['error' => 'An error occurred', 'message' => $exception->getMessage()],
+                HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR
+            );
         }
     }
 }
