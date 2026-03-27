@@ -66,6 +66,16 @@ class User extends Authenticatable
         return $this->hasOne(Plan::class, 'user_uuid', 'uuid')->where('type', 'physical_activity')->where('is_active', true);
     }
 
+    public function expenseCategories()
+    {
+        return $this->hasMany(ExpenseCategory::class, 'user_uuid', 'uuid');
+    }
+
+    public function expenseLogs()
+    {
+        return $this->hasMany(ExpenseLog::class, 'user_uuid', 'uuid');
+    }
+
     public function sendVeirfyEmailTOUser(): void
     {
         $frontendUrl = env('FRONTEND_URL', 'http://localhost:6500');

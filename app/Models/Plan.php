@@ -20,6 +20,7 @@ class Plan extends Model
         'is_active' => 'boolean',
         'start_date' => 'date',
         'end_date' => 'date',
+        'meta_data' => 'array',
     ];
 
     public function user()

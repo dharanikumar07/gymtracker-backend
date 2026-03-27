@@ -5,7 +5,7 @@ use App\Http\Controllers\Api\Auth\SocialAuthController;
 use App\Http\Controllers\Api\OnboardingController;
 use App\Http\Controllers\Api\PhysicalActivityController;
 use App\Http\Controllers\Api\DietController;
-use Illuminate\Http\Request;
+use App\Http\Controllers\Api\ExpenseController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -41,5 +41,24 @@ Route::prefix('v1')->group(function () {
         Route::post('/diet/routine/active', [DietController::class, 'setActivePlan']);
         Route::get('/diet/tracking', [DietController::class, 'getDietLogs']);
         Route::post('/diet/tracking', [DietController::class, 'saveDietLog']);
+
+        // Expense Routes
+        Route::get('/expenses', [ExpenseController::class, 'index']);
+        Route::post('/expenses/log', [ExpenseController::class, 'log']);
+        Route::delete('/expenses/{uuid}', [ExpenseController::class, 'destroy']);
+        
+        // Budget Plan Routes
+        Route::get('/expenses/budget-plan', [ExpenseController::class, 'getBudgetPlans']);
+        Route::post('/expenses/budget-plan', [ExpenseController::class, 'saveBudgetPlan']);
+        Route::get('/expenses/budget-plan/status/{uuid}', [ExpenseController::class, 'getBudgetPlanStatus']);
+        Route::patch('/expenses/budget-plan/{uuid}', [ExpenseController::class, 'updateBudgetPlan']);
+        Route::delete('/expenses/budget-plan/{uuid}', [ExpenseController::class, 'deleteBudgetPlan']);
+        Route::post('/expenses/budget-plan/{uuid}/activate', [ExpenseController::class, 'activateBudgetPlan']);
+
+        // Analytics Routes
+        require base_path('routes/analytics.php');
+
+        // Dashboard Routes
+        require base_path('routes/dashboard.php');
     });
 });

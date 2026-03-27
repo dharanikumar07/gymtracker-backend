@@ -18,7 +18,8 @@ return new class extends Migration {
 
             $table->string('name');
             $table->string('type');
-
+            
+            $table->jsonb('meta_data')->nullable();
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
 

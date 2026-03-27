@@ -6,6 +6,7 @@ use App\Data\PhysicalActivityData\AbstractPhysicalActivity;
 use App\Data\PhysicalActivityData\PhysicalActivityFactory;
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
+use App\Services\ExpenseService;
 use Illuminate\Http\Request;
 use App\Models\PhysicalActivitySlot;
 use App\Http\Helpers\Helper;
@@ -45,12 +46,12 @@ class OnboardingController extends Controller
     {
         try {
             $user = Auth::user();
-
             $data = $request->validate([
                 'profile' => 'required|array',
                 'plan' => 'required|array',
                 'routine' => 'required|array',
                 'steps_completed' => 'required|array',
+                'expenses' => 'array'
             ]);
 
             DB::beginTransaction();
@@ -92,6 +93,10 @@ class OnboardingController extends Controller
                         'meta_data' => null // As requested
                     ]);
                 }
+            }
+
+            if(!empty($data['expenses'] ?? [])) {
+                (new ExpenseService())->storeBulk($data['expenses']);
             }
 
             DB::commit();
