@@ -54,5 +54,11 @@ Route::prefix('v1')->group(function () {
         Route::patch('/expenses/budget-plan/{uuid}', [ExpenseController::class, 'updateBudgetPlan']);
         Route::delete('/expenses/budget-plan/{uuid}', [ExpenseController::class, 'deleteBudgetPlan']);
         Route::post('/expenses/budget-plan/{uuid}/activate', [ExpenseController::class, 'activateBudgetPlan']);
+
+        // Analytics Routes
+        require base_path('routes/analytics.php');
+
+        // Dashboard Routes
+        require base_path('routes/dashboard.php');
     });
 });
