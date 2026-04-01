@@ -173,3 +173,14 @@ for get api i did not want to add this three calls
   DB::commit();
   DB::rollback();
   ```
+
+## model file writing
+
+-> you should use guarded instead of fillable
+-> you should include the cast if it is necessary for the table
+
+## api request
+use this:
+$request->input('value_name');
+
+do not use like this $request->get() , $request->value_name

@@ -4,11 +4,15 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Onboarding\ProfileInformationRequest;
+use App\Http\Requests\Onboarding\PhysicalActivityRequest;
+use App\Http\Resources\PhysicalActivityResource;
 use App\Http\Helpers\Helper;
 use App\Data\PhysicalActivityData\PhysicalActivityFactory;
 use App\Models\Plan;
 use App\Models\PhysicalActivitySlot;
 use App\Services\ExpenseService;
+use App\Services\OnboardingService;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Response;
@@ -67,11 +71,45 @@ class OnboardingController extends Controller
                 'user_fitness_data' => $updatedProfileData
             ]);
 
+            $type = $data['physical_activity_type'];
+
+            // Check if plan already exists for this user with this type
+            $existingPlan = Plan::where('user_uuid', $user->uuid)
+                ->where('type', Plan::PHYSICAL_ACTIVITY_TYPE)
+                ->first();
+
+            // Check if physical activity slots already exist for this plan
+            $existingSlots = null;
+            if ($existingPlan) {
+                $existingSlots = PhysicalActivitySlot::where('plan_uuid', $existingPlan->uuid)
+                    ->where('user_uuid', $user->uuid)
+                    ->get();
+            }
+
+            if (!$existingPlan || !$existingSlots || !$existingSlots->isNotEmpty()) {
+                $physicalActivityClass = (new PhysicalActivityFactory($type))->getPhysicalActivityClass();
+                $physicalActivityData = $physicalActivityClass->getData();
+
+                $planData = [
+                    'name' => 'My Transformation Plan',
+                    'start_date' => now()->toDateString(),
+                    'end_date' => null,
+                    'is_active' => true,
+                ];
+
+                (new OnboardingService())->createWeeklyRoutineData(
+                    $type,
+                    $physicalActivityData,
+                    $planData,
+                    $user->uuid
+                );
+            }
+
             DB::commit();
 
             return Response::json([
                 'message' => 'Profile information saved successfully',
-                'data' => $updatedProfileData
+                'data' => $updatedProfileData,
             ], HttpFoundationResponse::HTTP_OK);
 
         } catch (\Exception $e) {
@@ -90,28 +128,114 @@ class OnboardingController extends Controller
         }
     }
 
-    public function getPhysicalActivityData(Request $request)
+    public function getPhysicalActivity()
     {
         try {
-            $type = $request->query('type');
+            $user = Auth::user();
+            
+            $plan = Plan::where('user_uuid', $user->uuid)
+                ->where('type', Plan::PHYSICAL_ACTIVITY_TYPE)
+                ->where('is_active', true)
+                ->first();
 
-            $physicalActivityClass = (new PhysicalActivityFactory($type))->getPhysicalActivityClass();
-            $data = $physicalActivityClass->getData();
+            throw_if(!$plan, new Exception('No physical activity plan found'));
+
+            $slots = PhysicalActivitySlot::where('plan_uuid', $plan->uuid)
+                ->where('user_uuid', $user->uuid)
+                ->orderBy('exercise_order')
+                ->get();
+
+            return (new PhysicalActivityResource([
+                'plan' => $plan,
+                'slots' => $slots,
+            ]))->response();
+
+        } catch (\Exception $e) {
+            Helper::logError(
+                'Unable to get physical activity',
+                [__CLASS__, __FUNCTION__],
+                $e,
+                []
+            );
+
+            return Response::json([
+                'message' => 'Server Error Occurred'
+            ], HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function savePhysicalActivity(PhysicalActivityRequest $request)
+    {
+        try {
+            $user = Auth::user();
+            $data = $request->all();
+
+            DB::beginTransaction();
+
+            $planUuid = $data['plan']['uuid'] ?? null;
+
+            $userFitnessData = $user->user_fitness_data ?? [];
+            $physicalActivityType = $data['physical_activity_type'] ?? $userFitnessData['physical_activity_type'] ?? null;
+
+            $plan = Plan::where('uuid', $planUuid)
+                ->where('user_uuid', $user->uuid)
+                ->first();
+
+            $plan->update([
+                'name' => $data['plan']['name'] ?? null,
+                    'type' => Plan::PHYSICAL_ACTIVITY_TYPE,
+                    'meta_data' => [
+                        'physical_activity_type' => $data['plan']['physical_activity_type'] ?? null
+                    ],
+                    'start_date' => $data['plan']['start_date'] ?? null,
+                    'end_date' => $data['plan']['end_date'] ?? null,
+                    'is_active' => $data['plan']['is_active'] ?? null,
+            ]);
+
+            $weeklySplit = $data['weekly_split'] ?? [];
+            $exerciseOrder = 1;
+
+            foreach ($weeklySplit as $dayName => $dayData) {
+                $dayLower = strtolower(explode('-', $dayName)[0]);
+                $targetMuscles = $dayData['target_muscles'] ?? [];
+                $workouts = $dayData['workouts'] ?? [];
+
+                foreach ($workouts as $workout) {
+                    PhysicalActivitySlot::updateOrCreate(
+                        [
+                            'user_uuid' => $user->uuid,
+                            'plan_uuid' => $plan->uuid,
+                        ],
+                        [
+
+                            'exercise_name' => $workout['name'] ?? '',
+                            'exercise_order' => $workout['exercise_order'] ?? $exerciseOrder,
+                            'day' => $dayLower,
+                            'metrics_type' => $workout['metrics']['type'] ?? null,
+                            'metrics_data' => $workout['metrics']['data'] ?? null,
+                            'meta_data' => [
+                                'sample_video_link' => $workout['sample_video_link'] ?? null,
+                                'target_muscles' => $targetMuscles,
+                            ],
+                        ]
+                    );
+
+                    $exerciseOrder++;
+                }
+            }
 
             DB::commit();
 
-            return Response::json($data, HttpFoundationResponse::HTTP_OK);
+            return Response::json([
+                'message' => 'Physical activity saved successfully',
+                'data' => [
+                    'plan' => $plan,
+                ]
+            ], HttpFoundationResponse::HTTP_OK);
 
         } catch (\Exception $e) {
             DB::rollBack();
-
-            Helper::logError(
-                'Unable to get physical activity data',
-                [__CLASS__, __FUNCTION__],
-                $e,
-                $request->toArray()
-            );
-
+            Helper::logError('Unable to save physical activity', [__CLASS__, __FUNCTION__], $e, $request->toArray());
             return Response::json([
                 'message' => 'Server Error Occurred'
             ], HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR);
