@@ -19,7 +19,8 @@ abstract class AbstractPhysicalActivity implements PhysicalActivityInterface
         return [
             'strength',
             'timed_sets',
-            'endurance'
+            'endurance',
+            'rest'
         ];
     }
     public function getPhysicalActivityData(?string $type): ?array

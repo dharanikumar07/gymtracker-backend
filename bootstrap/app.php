@@ -11,10 +11,13 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
         then: function (): void {
-            //Onboarding Routes
             Route::middleware('api')
                 ->prefix('api/v1')
                 ->group(base_path('routes/onboarding.php'));
+                
+            Route::middleware('api')
+                ->prefix('api/v1')
+                ->group(base_path('routes/workouts.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {

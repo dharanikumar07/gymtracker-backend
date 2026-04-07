@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Data\PhysicalActivityData\PhysicalActivityFactory;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -9,6 +10,9 @@ class PhysicalActivityResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $physicalActivityType = $this->resource['plan']->meta_data['physical_activity_type'] ?? null;
+        $activityClass = (new PhysicalActivityFactory($physicalActivityType))->getPhysicalActivityClass();
+
         return [
             'plan' => [
                 'uuid' => $this->resource['plan']->uuid,
@@ -32,7 +36,9 @@ class PhysicalActivityResource extends JsonResource
                     'meta_data' => $slot->meta_data ?? [],
                 ];
             }),
-            'physical_activity_type' => $this->resource['plan']->meta_data['physical_activity_type'] ?? null,
+            'physical_activity_type' => $physicalActivityType,
+            'units' => $activityClass->getAvailableUnitTypes(),
+            'metrics_types' => $activityClass->getAvailableMetricTypes(),
         ];
     }
 }

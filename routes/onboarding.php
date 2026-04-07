@@ -7,8 +7,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('onboarding')->group(function () {
         Route::get('/profile-information', [OnboardingController::class, 'getProfileInformation']);
         Route::post('/profile-information', [OnboardingController::class, 'saveProfileInformation']);
-        Route::get('/physical-activity', [OnboardingController::class, 'getPhysicalActivity']);
-        Route::post('/physical-activity', [OnboardingController::class, 'savePhysicalActivity']);
         Route::post('/complete', [OnboardingController::class, 'completeOnboarding']);
     });
 });

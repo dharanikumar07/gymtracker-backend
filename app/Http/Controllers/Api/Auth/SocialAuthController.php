@@ -87,8 +87,6 @@ class SocialAuthController extends Controller
                     'provider_name' => $provider,
                     'provider_id' => $providerId
                 ]);
-
-                event(new Registered($user));
             } else {
                 $user->update([
                     'provider_name' => $provider,
