@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\SocialAuthController;
-use App\Http\Controllers\Api\OnboardingController;
 use App\Http\Controllers\Api\PhysicalActivityController;
 use App\Http\Controllers\Api\DietController;
 use App\Http\Controllers\Api\ExpenseController;
@@ -23,11 +22,6 @@ Route::prefix('v1')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
         Route::post('/logout', [AuthController::class, 'logout']);
-        
-        // Onboarding Routes
-        Route::get('/onboarding/physical-activity', [OnboardingController::class, 'getPhysicalActivityData']);
-        Route::post('/onboarding/complete', [OnboardingController::class, 'completeOnboarding']);
-
         // Routine Routes
         Route::get('/routine', [PhysicalActivityController::class, 'getRoutine']);
         Route::patch('/routine', [PhysicalActivityController::class, 'updateRoutine']);
