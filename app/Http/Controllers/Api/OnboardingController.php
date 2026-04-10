@@ -133,60 +133,22 @@ class OnboardingController extends Controller
         try {
             $user = Auth::user();
             $data = $request->validate([
-                'profile' => 'required|array',
-                'plan' => 'required|array',
-                'routine' => 'required|array',
-                'steps_completed' => 'required|array',
                 'expenses' => 'array'
             ]);
-
-            $user->update([
-                'user_fitness_data' => $data['profile'],
-                'is_onboarding_completed' => true
-            ]);
-
-            $plan = Plan::create([
-                'user_uuid' => $user->uuid,
-                'name' => $data['plan']['name'],
-                'type' => Plan::PHYSICAL_ACTIVITY_TYPE,
-                'start_date' => $data['plan']['start_date'] ?? null,
-                'end_date' => $data['plan']['end_date'] ?? null,
-                'is_active' => $data['plan']['is_active'] ?? true,
-            ]);
-
-            foreach ($data['routine'] as $day => $dayInfo) {
-                if (!isset($dayInfo['workouts']) || !is_array($dayInfo['workouts']))
-                    continue;
-
-                foreach ($dayInfo['workouts'] as $index => $workout) {
-                    $metricsType = $workout['metrics']['type'] ?? 'rest';
-
-                    PhysicalActivitySlot::create([
-                        'user_uuid' => $user->uuid,
-                        'plan_uuid' => $plan->uuid,
-                        'exercise_name' => $workout['name'] ?? 'Rest Day',
-                        'exercise_order' => $index + 1,
-                        'day' => strtolower($day),
-                        'metrics_type' => $metricsType,
-                        'metrics_data' => $workout['metrics']['data'] ?? [],
-                        'meta_data' => null
-                    ]);
-                }
-            }
 
             if (!empty($data['expenses'] ?? [])) {
                 (new ExpenseService())->storeBulk($data['expenses']);
             }
 
-            DB::commit();
+            $user->update([
+                'is_onboarding_completed' => true
+            ]);
 
             return Response::json([
                 'message' => 'Onboarding completed successfully'
             ], HttpFoundationResponse::HTTP_OK);
 
         } catch (\Exception $e) {
-            DB::rollBack();
-
             Helper::logError(
                 'Unable to complete onboarding',
                 [__CLASS__, __FUNCTION__],
