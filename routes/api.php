@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\SocialAuthController;
+use App\Http\Controllers\Api\ExpenseLogController;
 use App\Http\Controllers\Api\PhysicalActivityController;
 use App\Http\Controllers\Api\DietController;
 use App\Http\Controllers\Api\ExpenseController;
@@ -37,9 +38,9 @@ Route::prefix('v1')->group(function () {
         Route::post('/diet/tracking', [DietController::class, 'saveDietLog']);
 
         // Expense Routes
-        Route::get('/expenses', [ExpenseController::class, 'index']);
-        Route::post('/expenses/log', [ExpenseController::class, 'log']);
-        Route::delete('/expenses/{uuid}', [ExpenseController::class, 'destroy']);
+        Route::get('/expenses', [ExpenseLogController::class, 'index']);
+        Route::post('/expenses/log', [ExpenseLogController::class, 'log']);
+        Route::delete('/expenses/{uuid}', [ExpenseLogController::class, 'destroy']);
         
         // Budget Plan Routes
         Route::get('/expenses/budget-plan', [ExpenseController::class, 'getBudgetPlans']);
