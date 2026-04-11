@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\ExpenseLogController;
 use App\Http\Controllers\Api\PhysicalActivityController;
 use App\Http\Controllers\Api\DietController;
 use App\Http\Controllers\Api\ExpenseController;
+use App\Http\Controllers\Api\PlanController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -49,6 +50,11 @@ Route::prefix('v1')->group(function () {
         Route::patch('/expenses/budget-plan/{uuid}', [ExpenseController::class, 'updateBudgetPlan']);
         Route::delete('/expenses/budget-plan/{uuid}', [ExpenseController::class, 'deleteBudgetPlan']);
         Route::post('/expenses/budget-plan/{uuid}/activate', [ExpenseController::class, 'activateBudgetPlan']);
+
+        // Plan Routes
+        Route::get('/plans', [PlanController::class, 'getPlans']);
+        Route::post('/plans', [PlanController::class, 'savePlan']);
+        Route::delete('/plans/{uuid}', [PlanController::class, 'deletePlan']);
 
         // Analytics Routes
         require base_path('routes/analytics.php');

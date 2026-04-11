@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Onboarding\PhysicalActivityRequest;
+use App\Http\Requests\SlotsRequest;
 use App\Http\Resources\PhysicalActivityResource;
+use App\Http\Resources\SlotResource;
 use App\Http\Helpers\Helper;
 use App\Models\Plan;
 use App\Models\PhysicalActivitySlot;
@@ -147,6 +149,83 @@ class WorkoutsController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Helper::logError('Unable to delete workout slot', [__CLASS__, __FUNCTION__], $e, []);
+            return Response::json([
+                'message' => 'Server Error Occurred'
+            ], HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Get slots by plan_uuid.
+     */
+    public function getSlots(\Illuminate\Http\Request $request)
+    {
+        try {
+            $user = Auth::user();
+            $planUuid = $request->query('plan_uuid');
+
+            throw_if(!$planUuid, new Exception('plan_uuid is required'));
+
+            $slots = PhysicalActivitySlot::where('plan_uuid', $planUuid)
+                ->where('user_uuid', $user->uuid)
+                ->orderBy('day')
+                ->orderBy('exercise_order')
+                ->get();
+
+            return Response::json([
+                'data' => SlotResource::collection($slots)
+            ], HttpFoundationResponse::HTTP_OK);
+
+        } catch (\Error | \Exception $exception) {
+            Helper::logError('Unable to fetch slots', [__CLASS__, __FUNCTION__], $exception);
+            return Response::json([
+                'message' => 'Server Error Occurred'
+            ], HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Save/Update slots using updateOrCreate.
+     */
+    public function saveSlots(SlotsRequest $request)
+    {
+        DB::beginTransaction();
+
+        try {
+            $user = Auth::user();
+            $slots = $request->input('slots');
+            $savedSlots = [];
+
+            foreach ( $slots as $slotData) {
+                $slot = PhysicalActivitySlot::updateOrCreate(
+                    [
+                        'uuid' => $slotData['uuid'] ?? null,
+                        'user_uuid' => $user->uuid,
+                    ],
+                    [
+                        'plan_uuid' => $slotData['plan_uuid'],
+                        'exercise_name' => $slotData['exercise_name'],
+                        'exercise_order' => $slotData['exercise_order'] ?? 1,
+                        'day' => $slotData['day'],
+                        'metrics_type' => $slotData['metrics_type'] ?? null,
+                        'metrics_data' => $slotData['metrics_data'] ?? [],
+                        'meta_data' => $slotData['meta_data'] ?? [],
+                    ]
+                );
+
+                $savedSlots[] = new SlotResource($slot);
+            }
+
+            DB::commit();
+
+            return Response::json([
+                'message' => 'Slots saved successfully',
+                'data' => $savedSlots
+            ], HttpFoundationResponse::HTTP_OK);
+
+        } catch (\Error | \Exception $exception) {
+            DB::rollBack();
+            Helper::logError('Unable to save slots', [__CLASS__, __FUNCTION__], $exception, $request->toArray());
             return Response::json([
                 'message' => 'Server Error Occurred'
             ], HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR);
