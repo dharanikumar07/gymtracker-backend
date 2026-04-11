@@ -8,5 +8,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/physical-activity', [WorkoutsController::class, 'getPhysicalActivity']);
         Route::post('/physical-activity', [WorkoutsController::class, 'savePhysicalActivity']);
         Route::delete('/workout-slot/{uuid}', [WorkoutsController::class, 'deleteWorkoutSlot']);
+        
+        Route::get('/slots', [WorkoutsController::class, 'getSlots']);
+        Route::post('/slots', [WorkoutsController::class, 'saveSlots']);
     });
 });
