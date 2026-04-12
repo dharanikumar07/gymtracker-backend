@@ -15,9 +15,9 @@ class PhysicalActivityFactory
   {
     return match ($this->type) {
       'strength_training' => new StrengthTraining(),
-      'cardio' => new CardioTraining(),
-      'yoga' => new FlexibilityAndYoga(),
-      'balance' => new BalanceAndCore(),
+      'cardio_training' => new CardioTraining(),
+      'flexibility_yoga' => new FlexibilityAndYoga(),
+      'balance_core' => new BalanceAndCore(),
       'calisthenics' => new Calisthenics(),
       default => throw new Exception('Invalid physical activity type'),
     };

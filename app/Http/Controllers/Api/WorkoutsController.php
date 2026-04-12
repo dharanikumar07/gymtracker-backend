@@ -10,7 +10,10 @@ use App\Http\Resources\SlotResource;
 use App\Http\Helpers\Helper;
 use App\Models\Plan;
 use App\Models\PhysicalActivitySlot;
+use App\Services\WorkoutService;
+use App\Data\PhysicalActivityData\PhysicalActivityFactory;
 use Exception;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Auth;
@@ -18,10 +21,16 @@ use Symfony\Component\HttpFoundation\Response as HttpFoundationResponse;
 
 class WorkoutsController extends Controller
 {
+    protected $workoutService;
+
+    public function __construct(WorkoutService $workoutService)
+    {
+        $this->workoutService = $workoutService;
+    }
     public function getPhysicalActivity()
     {
         $user = Auth::user();
-        
+
         $plan = Plan::where('user_uuid', $user->uuid)
             ->where('type', Plan::PHYSICAL_ACTIVITY_TYPE)
             ->first();
@@ -53,7 +62,7 @@ class WorkoutsController extends Controller
                 ->first();
 
             throw_if(!$plan, new Exception('No Plan found'));
-            
+
             $plan->update([
                 'name' => $request->input('plan.name'),
                 'type' => Plan::PHYSICAL_ACTIVITY_TYPE,
@@ -75,7 +84,7 @@ class WorkoutsController extends Controller
 
                 foreach ($workouts as $workout) {
                     $slotUuid = $workout['uuid'] ?? null;
-                    
+
                     if ($slotUuid) {
                         PhysicalActivitySlot::where('uuid', $slotUuid)
                             ->where('user_uuid', $user->uuid)
@@ -158,7 +167,7 @@ class WorkoutsController extends Controller
     /**
      * Get slots by plan_uuid.
      */
-    public function getSlots(\Illuminate\Http\Request $request)
+    public function getSlots(Request $request)
     {
         try {
             $user = Auth::user();
@@ -166,14 +175,63 @@ class WorkoutsController extends Controller
 
             throw_if(!$planUuid, new Exception('plan_uuid is required'));
 
-            $slots = PhysicalActivitySlot::where('plan_uuid', $planUuid)
+            $slots = PhysicalActivitySlot::with('plan')
+                ->where('plan_uuid', $planUuid)
                 ->where('user_uuid', $user->uuid)
                 ->orderBy('day')
                 ->orderBy('exercise_order')
                 ->get();
 
+            if ($slots->isEmpty()) {
+                $plan = Plan::where('uuid', $planUuid)
+                    ->where('user_uuid', $user->uuid)
+                    ->first();
+
+                throw_if(!$plan, new Exception("Selected plan not found"));
+
+                $physicalActivityType = $plan->meta_data['physical_activity_type'] ?? 'strength_training';
+                $activityClass = (new PhysicalActivityFactory($physicalActivityType))->getPhysicalActivityClass();
+                $defaultData = $activityClass->getData();
+                $dayWorkouts = $defaultData[$physicalActivityType] ?? [];
+
+                $slotsToSave = [];
+                $exerciseOrder = 1;
+
+                foreach ($dayWorkouts as $day => $dayData) {
+                    $targetMuscles = $dayData['target_muscles'] ?? [];
+                    $workouts = $dayData['workouts'] ?? [];
+
+                    foreach ($workouts as $exercise) {
+                        $metrics = $exercise['metrics'] ?? [];
+                        $slotsToSave[] = [
+                            'plan_uuid' => $planUuid,
+                            'exercise_name' => $exercise['name'] ?? 'Rest',
+                            'exercise_order' => $exerciseOrder++,
+                            'day' => strtolower(substr($day, 0, 3)),
+                            'metrics_type' => $metrics['type'] ?? 'strength',
+                            'metrics_data' => $metrics['data'] ?? [],
+                            'meta_data' => [
+                                'target_muscles' => $targetMuscles,
+                            ],
+                        ];
+                    }
+                }
+
+                $savedSlots = $this->workoutService->saveWorkoutSlots($user->uuid, $slotsToSave);
+                $slots = collect($savedSlots);
+            }
+
+            $physicalActivityType = $slots->first()?->plan?->meta_data['physical_activity_type'] ?? 'strength_training';
+            $activityClass = (new PhysicalActivityFactory($physicalActivityType))->getPhysicalActivityClass();
+
             return Response::json([
-                'data' => SlotResource::collection($slots)
+
+                'data' => [
+                    'slots' => SlotResource::collection($slots),
+                    'physical_activity_type' => $physicalActivityType,
+                    'units' => $activityClass->getAvailableUnitTypes(),
+                    'metrics_types' => $activityClass->getAvailableMetricTypes(),
+                ]
             ], HttpFoundationResponse::HTTP_OK);
 
         } catch (\Error | \Exception $exception) {
@@ -185,7 +243,7 @@ class WorkoutsController extends Controller
     }
 
     /**
-     * Save/Update slots using updateOrCreate.
+     * Save/Update slots using service.
      */
     public function saveSlots(SlotsRequest $request)
     {
@@ -194,33 +252,14 @@ class WorkoutsController extends Controller
         try {
             $user = Auth::user();
             $slots = $request->input('slots');
-            $savedSlots = [];
 
-            foreach ( $slots as $slotData) {
-                $slot = PhysicalActivitySlot::updateOrCreate(
-                    [
-                        'uuid' => $slotData['uuid'] ?? null,
-                        'user_uuid' => $user->uuid,
-                    ],
-                    [
-                        'plan_uuid' => $slotData['plan_uuid'],
-                        'exercise_name' => $slotData['exercise_name'],
-                        'exercise_order' => $slotData['exercise_order'] ?? 1,
-                        'day' => $slotData['day'],
-                        'metrics_type' => $slotData['metrics_type'] ?? null,
-                        'metrics_data' => $slotData['metrics_data'] ?? [],
-                        'meta_data' => $slotData['meta_data'] ?? [],
-                    ]
-                );
-
-                $savedSlots[] = new SlotResource($slot);
-            }
+            $savedSlots = $this->workoutService->saveWorkoutSlots($user->uuid, $slots);
 
             DB::commit();
 
             return Response::json([
                 'message' => 'Slots saved successfully',
-                'data' => $savedSlots
+                'data' => SlotResource::collection($savedSlots)
             ], HttpFoundationResponse::HTTP_OK);
 
         } catch (\Error | \Exception $exception) {

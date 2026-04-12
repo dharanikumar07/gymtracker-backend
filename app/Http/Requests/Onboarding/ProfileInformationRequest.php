@@ -23,7 +23,7 @@ class ProfileInformationRequest extends FormRequest
             'height' => 'required|numeric|min:50|max:300',
             'weight' => 'required|numeric|min:20|max:500',
             'fitness_goal' => 'required|string|in:muscle_gain,weight_loss,maintenance',
-            'physical_activity_type' => 'required|string|in:strength_training,cardio,flexibility,balance,calisthenics',
+            'physical_activity_type' => 'required|string',
         ];
     }
 
@@ -47,7 +47,6 @@ class ProfileInformationRequest extends FormRequest
             'fitness_goal.required' => 'Fitness goal is required',
             'fitness_goal.in' => 'Fitness goal must be muscle_gain, weight_loss, or maintenance',
             'physical_activity_type.required' => 'Training type is required',
-            'physical_activity_type.in' => 'Training type must be strength_training, cardio, flexibility, balance, or calisthenics',
         ];
     }
 
