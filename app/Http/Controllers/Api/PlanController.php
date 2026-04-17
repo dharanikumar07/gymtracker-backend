@@ -24,13 +24,19 @@ class PlanController extends Controller
         try {
             $user = Auth::user();
             $type = $request->query('type');
+            $isActive = $request->input('is_active');
 
             throw_if(!$type, new Exception("Plan type is not found"));
 
-            $plans = Plan::where('user_uuid', $user->uuid)
+            $query = Plan::where('user_uuid', $user->uuid)
             ->where('type', $type)
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ->orderBy('created_at', 'desc');
+
+            if($isActive) {
+                $query->where('is_active', $isActive);
+            }
+
+            $plans = $query->get();
 
             return Response::json([
                 'data' => PlanResource::collection($plans)

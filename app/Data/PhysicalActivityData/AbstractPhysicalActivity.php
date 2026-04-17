@@ -23,17 +23,4 @@ abstract class AbstractPhysicalActivity implements PhysicalActivityInterface
             'rest'
         ];
     }
-    public function getPhysicalActivityData(?string $type): ?array
-    {
-        $activity = match ($type) {
-            'strength_training' => new StrengthTraining(),
-            'cardio' => new CardioTraining(),
-            'yoga' => new FlexibilityAndYoga(),
-            'balance' => new BalanceAndCore(),
-            'calisthenics' => new Calisthenics(),
-            default => throw new Exception('Invalid physical activity type'),
-        };
-
-        return $activity->getData();
-    }
 }

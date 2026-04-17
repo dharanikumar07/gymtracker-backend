@@ -24,11 +24,6 @@ Route::prefix('v1')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
         Route::post('/logout', [AuthController::class, 'logout']);
-        // Routine Routes
-        Route::get('/routine', [PhysicalActivityController::class, 'getRoutine']);
-        Route::patch('/routine', [PhysicalActivityController::class, 'updateRoutine']);
-        Route::get('/routine/tracking', [PhysicalActivityController::class, 'getTrackingData']);
-        Route::post('/routine/tracking', [PhysicalActivityController::class, 'saveTrackingData']);
 
         // Diet Routes
         Route::get('/diet/routine', [DietController::class, 'getDietRoutine']);
