@@ -9,9 +9,9 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('physical_activity_tracker', function (Blueprint $table) {
-            $table->string('type')->after('year');
-            $table->string('status')->after('year');
-            $table->string('reason')->after('year');
+            $table->string('type')->after('year')->nullable();
+            $table->string('status')->after('year')->nullable();
+            $table->string('reason')->after('year')->nullable();
         });
     }
 

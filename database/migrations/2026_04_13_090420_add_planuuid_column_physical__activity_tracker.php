@@ -20,8 +20,8 @@ return new class extends Migration {
     {
         Schema::table('physical_activity_tracker', function (Blueprint $table) {
 
-            if (Schema::hasColumn('physical_activity_tracker', 'type')) {
-                $table->dropColumn('type');
+            if (Schema::hasColumn('physical_activity_tracker', 'plan_uuid')) {
+                $table->dropColumn('plan_uuid');
             }
 
         });
