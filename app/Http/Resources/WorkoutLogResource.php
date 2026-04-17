@@ -17,6 +17,9 @@ class WorkoutLogResource extends JsonResource
             'metrics_data' => $this->metrics_data ?? [],
             'activity_date' => $this->activity_date,
             'day' => $this->day,
+            'status' => $this->status,
+            'type' => $this->type,
+            'reason' => $this->reason,
             'created_at' => $this->created_at,
         ];
     }
