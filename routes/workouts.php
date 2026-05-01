@@ -15,5 +15,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/log', [WorkoutLogController::class, 'index']);
         Route::post('/log', [WorkoutLogController::class, 'store']);
+        Route::delete('/log/{uuid}', [WorkoutsController::class, 'deleteWorkoutLog']);
     });
 });
