@@ -111,19 +111,16 @@ class WorkoutLogController extends Controller
                         ->max('exercise_order') ?? 0;
 
                     $defaultMetricsData = $this->workoutService->getDefaultMetricsDataByType($metricsType);
-                    $mergedMetricsData = array_merge($defaultMetricsData, $metricsData);
 
-                    $slot = PhysicalActivitySlot::updateOrCreate(
+                    $slot = PhysicalActivitySlot::create(
                         [
                             'user_uuid' => $user->uuid,
                             'plan_uuid' => $plan->uuid,
-                            'day' => $day,
-                        ],
-                        [
                             'exercise_name' => $exerciseName,
                             'exercise_order' => $maxOrder + 1,
                             'metrics_type' => $metricsType,
-                            'metrics_data' => $mergedMetricsData,
+                            'day' => $day,
+                            'metrics_data' => $defaultMetricsData,
                         ]
                     );
 

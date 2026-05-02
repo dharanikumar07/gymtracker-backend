@@ -98,8 +98,8 @@ class WorkoutService
                 'rest' => 20,
             ],
             'endurance' => [
-                'duration' => 3,
-                'duration_unit' => 'minutes',
+                'duration' => 60,
+                'duration_unit' => 'seconds',
             ],
             'rest' => [],
             default => [],

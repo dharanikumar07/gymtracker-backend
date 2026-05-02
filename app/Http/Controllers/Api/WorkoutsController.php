@@ -10,6 +10,7 @@ use App\Http\Resources\SlotResource;
 use App\Http\Helpers\Helper;
 use App\Models\Plan;
 use App\Models\PhysicalActivitySlot;
+use App\Models\PhysicalActivityTracker;
 use App\Services\WorkoutService;
 use App\Data\PhysicalActivityData\PhysicalActivityFactory;
 use Exception;
@@ -158,6 +159,36 @@ class WorkoutsController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Helper::logError('Unable to delete workout slot', [__CLASS__, __FUNCTION__], $e, []);
+            return Response::json([
+                'message' => 'Server Error Occurred'
+            ], HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function deleteWorkoutLog($uuid)
+    {
+        DB::beginTransaction();
+
+        try {
+            $user = Auth::user();
+
+            $log = PhysicalActivityTracker::where('uuid', $uuid)
+                ->where('user_uuid', $user->uuid)
+                ->first();
+
+            throw_if(!$log, new Exception('Workout log not found'));
+
+            $log->delete();
+
+            DB::commit();
+
+            return Response::json([
+                'message' => 'Workout log deleted successfully',
+            ], HttpFoundationResponse::HTTP_OK);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Helper::logError('Unable to delete workout log', [__CLASS__, __FUNCTION__], $e, []);
             return Response::json([
                 'message' => 'Server Error Occurred'
             ], HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR);
