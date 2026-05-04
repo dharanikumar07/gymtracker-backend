@@ -10,19 +10,26 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('diet_plan_items', function (Blueprint $table) {
+        Schema::create('diet_logs', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
 
             $table->uuid('user_uuid');
             $table->uuid('plan_uuid');
+            $table->uuid('meal_plan_uuid');
+            $table->enum('day', [
+                'mon',
+                'tue',
+                'wed',
+                'thu',
+                'fri',
+                'sat',
+                'sun'
+            ]);
 
-            $table->enum('meal_type', ['breakfast', 'lunch', 'dinner', 'snack'])->nullable();
-            $table->enum('day', ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'])->nullable();
-
-            $table->string('food_name')->nullable();
-            $table->decimal('quantity', 8, 2);
-            $table->enum('unit', [
+            $table->string('actual_food_name')->nullable();
+            $table->decimal('actual_quantity', 8, 2);
+            $table->enum('quantity_unit', [
                 'g',
                 'kg',
                 'ml',
@@ -38,8 +45,13 @@ return new class extends Migration {
 
             $table->jsonb('nutrition_data')->nullable();
 
-            $table->timestamps();
+            $table->string('notes')->nullable();
             $table->softDeletes();
+            $table->timestamps();
+
+            $table->index('user_uuid');
+            $table->index('plan_uuid');
+            $table->index('meal_plan_uuid');
 
             $table->foreign('user_uuid')
                 ->references('uuid')
@@ -50,6 +62,11 @@ return new class extends Migration {
                 ->references('uuid')
                 ->on('plans')
                 ->cascadeOnDelete();
+
+            $table->foreign('meal_plan_uuid')
+                ->references('uuid')
+                ->on('meal_plans')
+                ->cascadeOnDelete();
         });
     }
 
@@ -58,6 +75,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('diet_plan_items');
+        Schema::dropIfExists('diet_logs');
     }
 };

@@ -4,11 +4,11 @@ namespace App\Data\DietPlanData;
 
 abstract class AbstractDietPlan implements DietPlanInterface
 {
-    protected string $dietType; // 'veg' or 'nonveg'
-    
+    protected string $dietType;
+
     public function __construct(string $dietType)
     {
-        $this->dietType = $dietType;
+        $this->dietType = str_replace('_', '', strtolower($dietType));
     }
 
     abstract protected function getCalorieAdjustment(): int;
@@ -16,18 +16,17 @@ abstract class AbstractDietPlan implements DietPlanInterface
 
     public function generate(float $weight): array
     {
-        // 1. Establish Absolute Targets
         $maintenanceCalories = $weight * 2.2 * 14;
         $targetCalories = $maintenanceCalories + $this->getCalorieAdjustment();
-        
+
         if ($targetCalories < 1200) $targetCalories = 1200;
 
-        $proteinGrams = $weight * 2; // Exact Protein Rule
+        $proteinGrams = $weight * 2;
         $proteinCalories = $proteinGrams * 4;
         $remainingCalories = $targetCalories - $proteinCalories;
 
-        $carbsGrams = ($remainingCalories * 0.60) / 4; // Exact Carb Rule
-        $fatsGrams = ($remainingCalories * 0.40) / 9;  // Exact Fat Rule
+        $carbsGrams = ($remainingCalories * 0.60) / 4;
+        $fatsGrams = ($remainingCalories * 0.40) / 9;
 
         $targets = [
             'calories' => (int) round($targetCalories),
@@ -36,7 +35,6 @@ abstract class AbstractDietPlan implements DietPlanInterface
             'fats' => (int) round($fatsGrams),
         ];
 
-        // 2. Build the Weekly Plan
         $templates = $this->getMealTemplates();
         $weeklyPlan = [];
         $days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -44,7 +42,7 @@ abstract class AbstractDietPlan implements DietPlanInterface
         foreach ($days as $index => $day) {
             $templateIndex = $index % count($templates);
             $dayTemplate = $templates[$templateIndex];
-            
+
             $weeklyPlan[$day] = $this->balanceDay($dayTemplate, $targets);
         }
 
@@ -54,123 +52,89 @@ abstract class AbstractDietPlan implements DietPlanInterface
         ];
     }
 
-    /**
-     * The Precision Engine: Balances a template to match targets exactly
-     */
     protected function balanceDay(array $template, array $targets): array
     {
-        // Flatten all items in the template for calculation
-        $allItems = [];
-        foreach ($template as $mealType => $items) {
-            foreach ($items as $item) {
-                $item['meal_type'] = $mealType;
-                $allItems[] = $item;
-            }
+        $balancedMeals = [];
+
+        foreach ($template as $mealKey => $meal) {
+            $balancedMeal = $meal;
+            $balancedMeal['food_data'] = $this->scaleMealFoods($meal['foods'], $meal['target_calories']);
+
+            $mealTotals = $this->sumMealTotals($balancedMeal['food_data']);
+            $balancedMeal['calories'] = $mealTotals['calories'];
+            $balancedMeal['protein'] = $mealTotals['protein'];
+            $balancedMeal['carbs'] = $mealTotals['carbs'];
+            $balancedMeal['fats'] = $mealTotals['fats'];
+
+            unset($balancedMeal['foods']);
+            unset($balancedMeal['target_calories']);
+
+            $balancedMeals[$mealKey] = $balancedMeal;
         }
 
-        // 1. Initial rough scale based on calories
-        $baseCals = 0;
-        foreach ($allItems as $item) {
-            $baseCals += $item['base_calories'];
-        }
-        
-        $scaleFactor = $baseCals > 0 ? ($targets['calories'] / $baseCals) : 1;
+        return $balancedMeals;
+    }
 
-        foreach ($allItems as &$item) {
-            $item['quantity'] = $item['base_quantity'] * $scaleFactor;
-            $this->recalculateItem($item);
-        }
-        unset($item); // Critical: Break the reference
-
-        // 2. Precision Balancing Loop
-        for ($i = 0; $i < 3; $i++) {
-            $this->adjustMacro($allItems, 'protein', $targets['protein']);
-            $this->adjustMacro($allItems, 'carbs', $targets['carbs']);
-            $this->adjustMacro($allItems, 'fats', $targets['fats']);
+    protected function scaleMealFoods(array $foods, float $targetCalories): array
+    {
+        $currentCals = 0;
+        foreach ($foods as $food) {
+            $item = $this->getFoodByName($food['name']);
+            $ratio = ($item['unit'] === 'pcs') ? $food['quantity'] : ($food['quantity'] / 100);
+            $currentCals += $item['calories'] * $ratio;
         }
 
-        // 3. Final cleanup and re-grouping
-        $balancedPlan = ['breakfast' => [], 'lunch' => [], 'dinner' => [], 'snack' => []];
-        foreach ($allItems as $finalItem) {
-            $mType = $finalItem['meal_type'] ?? 'snack';
-            
-            // Remove calculation keys for clean response
-            $cleaned = [
-                'food_name' => $finalItem['name'],
-                'quantity' => (float) number_format($finalItem['quantity'], 2, '.', ''),
-                'unit' => $finalItem['unit'],
-                'calories' => (int) round($finalItem['calories']),
-                'protein' => (int) round($finalItem['protein']),
-                'carbs' => (int) round($finalItem['carbs']),
-                'fats' => (int) round($finalItem['fats']),
+        $scaleFactor = $currentCals > 0 ? ($targetCalories / $currentCals) : 1;
+        $scaledFoods = [];
+
+        foreach ($foods as $food) {
+            $item = $this->getFoodByName($food['name']);
+            $scaledQty = $food['quantity'] * $scaleFactor;
+            $ratio = ($item['unit'] === 'pcs') ? $scaledQty : ($scaledQty / 100);
+
+            $scaledFoods[] = [
+                'name' => $food['name'],
+                'quantity' => round($scaledQty, 2),
+                'unit' => $item['unit'],
+                'calories' => (int) round($item['calories'] * $ratio),
+                'protein' => round($item['protein'] * $ratio, 1),
+                'carbs' => round($item['carbs'] * $ratio, 1),
+                'fats' => round($item['fats'] * $ratio, 1),
             ];
-            
-            $balancedPlan[$mType][] = $cleaned;
         }
 
-        return $balancedPlan;
+        return $scaledFoods;
     }
 
-    /**
-     * Adjusts a specific macro by modifying the "Anchor" food
-     */
-    protected function adjustMacro(array &$items, string $macro, float $targetGrams): void
+    protected function sumMealTotals(array $foodData): array
     {
-        $currentTotal = 0;
-        foreach ($items as $item) {
-            $currentTotal += $item[$macro];
-        }
-        
-        $diff = $targetGrams - $currentTotal;
-        if (abs($diff) < 0.5) return;
+        $totals = ['calories' => 0, 'protein' => 0, 'carbs' => 0, 'fats' => 0];
 
-        $anchorIndex = -1;
-        $maxDensity = -1;
-
-        foreach ($items as $idx => $item) {
-            if ($item['unit'] === 'pcs') continue; 
-            
-            $density = $item[$macro] / (max(1, $item['quantity']));
-            if ($density > $maxDensity) {
-                $maxDensity = $density;
-                $anchorIndex = $idx;
-            }
+        foreach ($foodData as $food) {
+            $totals['calories'] += $food['calories'];
+            $totals['protein'] += $food['protein'];
+            $totals['carbs'] += $food['carbs'];
+            $totals['fats'] += $food['fats'];
         }
 
-        if ($anchorIndex === -1) $anchorIndex = 0;
-
-        $anchor = &$items[$anchorIndex];
-        $density = $anchor[$macro] / (max(1, $anchor['quantity']));
-        
-        if ($density > 0) {
-            $additionalQty = $diff / $density;
-            $anchor['quantity'] += $additionalQty;
-            if ($anchor['quantity'] < 5) $anchor['quantity'] = 5; 
-            $this->recalculateItem($anchor);
-        }
-        unset($anchor); // Break the reference
-    }
-
-    protected function recalculateItem(array &$item): void
-    {
-        $food = $this->getFoodByName($item['name']);
-        $ratio = ($food['unit'] === 'pcs') ? $item['quantity'] : ($item['quantity'] / 100);
-
-        $item['calories'] = $food['calories'] * $ratio;
-        $item['protein'] = $food['protein'] * $ratio;
-        $item['carbs'] = $food['carbs'] * $ratio;
-        $item['fats'] = $food['fats'] * $ratio;
+        return [
+            'calories' => (int) round($totals['calories']),
+            'protein' => (int) round($totals['protein']),
+            'carbs' => (int) round($totals['carbs']),
+            'fats' => (int) round($totals['fats']),
+        ];
     }
 
     protected function getFoodByName(string $name): array
     {
-        $pool = $this->dietType === 'veg' ? FoodPool::getVegFoods() : FoodPool::getNonVegFoods();
+        $isNonVeg = in_array($this->dietType, ['nonveg', 'non_veg']);
+        $pool = $isNonVeg ? FoodLibrary::getNonVegFoods() : FoodLibrary::getVegFoods();
         foreach ($pool as $food) {
             if ($food['name'] === $name) return $food;
         }
 
-        if ($this->dietType === 'nonveg') {
-            foreach (FoodPool::getVegFoods() as $food) {
+        if ($isNonVeg) {
+            foreach (FoodLibrary::getVegFoods() as $food) {
                 if ($food['name'] === $name) return $food;
             }
         }
@@ -178,19 +142,11 @@ abstract class AbstractDietPlan implements DietPlanInterface
         throw new \Exception("Food not found: {$name}");
     }
 
-    protected function createMealItem(string $name, float $baseQuantity): array
+    protected function createMealFood(string $name, float $quantity): array
     {
-        $food = $this->getFoodByName($name);
-        $ratio = ($food['unit'] === 'pcs') ? $baseQuantity : ($baseQuantity / 100);
-
         return [
-            'name' => $food['name'],
-            'unit' => $food['unit'],
-            'base_quantity' => $baseQuantity,
-            'base_calories' => $food['calories'] * $ratio,
-            'base_protein' => $food['protein'] * $ratio,
-            'base_carbs' => $food['carbs'] * $ratio,
-            'base_fats' => $food['fats'] * $ratio,
+            'name' => $name,
+            'quantity' => $quantity,
         ];
     }
 }

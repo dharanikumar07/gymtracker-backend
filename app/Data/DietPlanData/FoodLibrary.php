@@ -2,11 +2,8 @@
 
 namespace App\Data\DietPlanData;
 
-class FoodPool
+class FoodLibrary
 {
-    /**
-     * All nutrition data is per 100g or 1 unit (marked in unit column)
-     */
     public static function getVegFoods(): array
     {
         return [
@@ -66,7 +63,6 @@ class FoodPool
             ['name' => 'Sardines', 'unit' => 'g', 'calories' => 208, 'protein' => 25, 'carbs' => 0, 'fats' => 11],
             ['name' => 'Crab', 'unit' => 'g', 'calories' => 84, 'protein' => 18, 'carbs' => 0, 'fats' => 1.1],
             ['name' => 'Scallops', 'unit' => 'g', 'calories' => 111, 'protein' => 20, 'carbs' => 3.1, 'fats' => 0.8],
-            // Including Veg items in Non-Veg pool for variety
             ['name' => 'Oats', 'unit' => 'g', 'calories' => 389, 'protein' => 17, 'carbs' => 66, 'fats' => 7],
             ['name' => 'Brown Rice', 'unit' => 'g', 'calories' => 111, 'protein' => 2.6, 'carbs' => 23, 'fats' => 0.9],
             ['name' => 'Sweet Potato', 'unit' => 'g', 'calories' => 86, 'protein' => 1.6, 'carbs' => 20, 'fats' => 0.1],
@@ -77,6 +73,26 @@ class FoodPool
             ['name' => 'Broccoli', 'unit' => 'g', 'calories' => 34, 'protein' => 2.8, 'carbs' => 7, 'fats' => 0.4],
             ['name' => 'Avocado', 'unit' => 'g', 'calories' => 160, 'protein' => 2, 'carbs' => 9, 'fats' => 15],
             ['name' => 'Whole Wheat Bread', 'unit' => 'pcs', 'calories' => 69, 'protein' => 3.6, 'carbs' => 12, 'fats' => 0.9],
+        ];
+    }
+
+    public static function getFoodsByType(string $dietType): array
+    {
+        $dietType = str_replace('_', '', strtolower($dietType));
+        $veg = self::getVegFoods();
+
+        if ($dietType === 'veg') {
+            return $veg;
+        }
+
+        return self::getNonVegFoods();
+    }
+
+    public static function getAllFoods(): array
+    {
+        return [
+            'veg' => self::getVegFoods(),
+            'nonveg' => self::getNonVegFoods(),
         ];
     }
 }
