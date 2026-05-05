@@ -6,20 +6,20 @@ use App\Traits\UuidTrait;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class DietPlanItem extends Model
+class MealPlan extends Model
 {
     use UuidTrait, SoftDeletes;
 
-    protected $table = 'diet_plan_items';
+    protected $table = 'meal_plans';
 
     protected $guarded = [];
 
     protected $casts = [
-        'quantity' => 'decimal:2',
-        'calories' => 'integer',
-        'protein' => 'integer',
-        'carbs' => 'integer',
-        'fats' => 'integer',
+        'food_data' => 'array',
+        'calories' => 'float',
+        'protein' => 'float',
+        'carbs' => 'float',
+        'fats' => 'float',
         'nutrition_data' => 'array',
     ];
 
@@ -35,6 +35,6 @@ class DietPlanItem extends Model
 
     public function logs()
     {
-        return $this->hasMany(DietLog::class, 'diet_plan_item_uuid', 'uuid');
+        return $this->hasMany(DietLog::class, 'meal_plan_uuid', 'uuid');
     }
 }

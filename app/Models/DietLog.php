@@ -23,9 +23,9 @@ class DietLog extends Model
         'nutrition_data' => 'array',
     ];
 
-    public function dietPlanItem()
+    public function mealPlan()
     {
-        return $this->belongsTo(DietPlanItem::class, 'diet_plan_item_uuid', 'uuid');
+        return $this->belongsTo(MealPlan::class, 'meal_plan_uuid', 'uuid');
     }
 
     public function plan()

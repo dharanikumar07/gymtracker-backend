@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Auth\SocialAuthController;
 use App\Http\Controllers\Api\ExpenseLogController;
 use App\Http\Controllers\Api\PhysicalActivityController;
 use App\Http\Controllers\Api\DietController;
+use App\Http\Controllers\Api\DietLogController;
 use App\Http\Controllers\Api\ExpenseController;
 use App\Http\Controllers\Api\PlanController;
 use Illuminate\Support\Facades\Route;
@@ -26,12 +27,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
 
         // Diet Routes
-        Route::get('/diet/routine', [DietController::class, 'getDietRoutine']);
-        Route::post('/diet/routine', [DietController::class, 'generatePlan']);
-        Route::patch('/diet/routine', [DietController::class, 'updateDietRoutine']);
-        Route::post('/diet/routine/active', [DietController::class, 'setActivePlan']);
-        Route::get('/diet/tracking', [DietController::class, 'getDietLogs']);
-        Route::post('/diet/tracking', [DietController::class, 'saveDietLog']);
+        require base_path('routes/diet.php');
 
         // Expense Routes
         Route::get('/expenses', [ExpenseLogController::class, 'index']);
@@ -49,6 +45,7 @@ Route::prefix('v1')->group(function () {
         // Plan Routes
         Route::get('/plans', [PlanController::class, 'getPlans']);
         Route::post('/plans', [PlanController::class, 'savePlan']);
+        Route::patch('/plans/status', [PlanController::class, 'updatePlanStatus']);
         Route::delete('/plans/{uuid}', [PlanController::class, 'deletePlan']);
 
         // Analytics Routes

@@ -11,46 +11,91 @@ class MaintenancePlan extends AbstractDietPlan
 
     protected function getMealTemplates(): array
     {
+        $lunch = $this->dietType === 'veg' ? 'Paneer' : 'Chicken Breast';
+        $dinner = $this->dietType === 'veg' ? 'Chickpeas' : 'Salmon';
+        $breakfast = $this->dietType === 'veg' ? 'Cottage Cheese' : 'Egg (Whole)';
+        $breakfastQty = $this->dietType === 'veg' ? 150 : 2;
+        $lunch2 = $this->dietType === 'veg' ? 'Soy Chunks' : 'Turkey Breast';
+        $dinner2 = $this->dietType === 'veg' ? 'Lentils (Cooked)' : 'Tilapia';
+
         return [
-            // Template 1
             [
                 'breakfast' => [
-                    $this->createMealItem('Oats', 80),
-                    $this->createMealItem('Milk', 200),
-                    $this->createMealItem('Banana', 1),
+                    'meal_name' => 'Classic Oats Bowl',
+                    'time_period' => 'breakfast',
+                    'target_calories' => 450,
+                    'foods' => [
+                        $this->createMealFood('Oats', 80),
+                        $this->createMealFood('Milk', 200),
+                        $this->createMealFood('Banana', 1),
+                    ],
                 ],
                 'lunch' => [
-                    $this->createMealItem($this->dietType === 'veg' ? 'Paneer' : 'Chicken Breast', 120),
-                    $this->createMealItem('Brown Rice', 150),
-                    $this->createMealItem('Broccoli', 100),
+                    'meal_name' => $this->dietType === 'veg' ? 'Paneer Rice Bowl' : 'Chicken Rice Plate',
+                    'time_period' => 'lunch',
+                    'target_calories' => 600,
+                    'foods' => [
+                        $this->createMealFood($lunch, 120),
+                        $this->createMealFood('Brown Rice', 150),
+                        $this->createMealFood('Broccoli', 100),
+                    ],
                 ],
                 'snack' => [
-                    $this->createMealItem('Almonds', 20),
+                    'meal_name' => 'Almond Snack',
+                    'time_period' => 'snack',
+                    'target_calories' => 150,
+                    'foods' => [
+                        $this->createMealFood('Almonds', 20),
+                    ],
                 ],
                 'dinner' => [
-                    $this->createMealItem($this->dietType === 'veg' ? 'Chickpeas' : 'Salmon', 120),
-                    $this->createMealItem('Sweet Potato', 150),
-                    $this->createMealItem('Spinach', 100),
+                    'meal_name' => $this->dietType === 'veg' ? 'Chickpea Sweet Bowl' : 'Salmon Sweet Plate',
+                    'time_period' => 'dinner',
+                    'target_calories' => 550,
+                    'foods' => [
+                        $this->createMealFood($dinner, 120),
+                        $this->createMealFood('Sweet Potato', 150),
+                        $this->createMealFood('Spinach', 100),
+                    ],
                 ]
             ],
-            // Template 2
             [
                 'breakfast' => [
-                    $this->createMealItem($this->dietType === 'veg' ? 'Cottage Cheese' : 'Egg (Whole)', $this->dietType === 'veg' ? 150 : 2),
-                    $this->createMealItem('Whole Wheat Bread', 2),
+                    'meal_name' => 'Protein Breakfast',
+                    'time_period' => 'breakfast',
+                    'target_calories' => 350,
+                    'foods' => [
+                        $this->createMealFood($breakfast, $breakfastQty),
+                        $this->createMealFood('Whole Wheat Bread', 2),
+                    ],
                 ],
                 'lunch' => [
-                    $this->createMealItem($this->dietType === 'veg' ? 'Soy Chunks' : 'Turkey Breast', 120),
-                    $this->createMealItem('Quinoa', 150),
-                    $this->createMealItem('Mushrooms', 100),
+                    'meal_name' => $this->dietType === 'veg' ? 'Soy Quinoa Plate' : 'Turkey Quinoa Bowl',
+                    'time_period' => 'lunch',
+                    'target_calories' => 600,
+                    'foods' => [
+                        $this->createMealFood($lunch2, 120),
+                        $this->createMealFood('Quinoa', 150),
+                        $this->createMealFood('Mushrooms', 100),
+                    ],
                 ],
                 'snack' => [
-                    $this->createMealItem('Apple', 1),
+                    'meal_name' => 'Fresh Apple',
+                    'time_period' => 'snack',
+                    'target_calories' => 80,
+                    'foods' => [
+                        $this->createMealFood('Apple', 1),
+                    ],
                 ],
                 'dinner' => [
-                    $this->createMealItem($this->dietType === 'veg' ? 'Lentils (Cooked)' : 'Tilapia', 120),
-                    $this->createMealItem('Potatoes (Boiled)', 150),
-                    $this->createMealItem('Broccoli', 100),
+                    'meal_name' => $this->dietType === 'veg' ? 'Lentil Potato Bowl' : 'Tilapia Veggie Plate',
+                    'time_period' => 'dinner',
+                    'target_calories' => 500,
+                    'foods' => [
+                        $this->createMealFood($dinner2, 120),
+                        $this->createMealFood('Potatoes (Boiled)', 150),
+                        $this->createMealFood('Broccoli', 100),
+                    ],
                 ]
             ]
         ];
