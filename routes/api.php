@@ -45,6 +45,7 @@ Route::prefix('v1')->group(function () {
         // Plan Routes
         Route::get('/plans', [PlanController::class, 'getPlans']);
         Route::post('/plans', [PlanController::class, 'savePlan']);
+        Route::patch('/plans/status', [PlanController::class, 'updatePlanStatus']);
         Route::delete('/plans/{uuid}', [PlanController::class, 'deletePlan']);
 
         // Analytics Routes

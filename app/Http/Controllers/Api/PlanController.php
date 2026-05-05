@@ -29,10 +29,10 @@ class PlanController extends Controller
             throw_if(!$type, new Exception("Plan type is not found"));
 
             $query = Plan::where('user_uuid', $user->uuid)
-            ->where('type', $type)
-            ->orderBy('created_at', 'desc');
+                ->where('type', $type)
+                ->orderBy('created_at', 'desc');
 
-            if($isActive) {
+            if ($isActive) {
                 $query->where('is_active', $isActive);
             }
 
@@ -55,16 +55,6 @@ class PlanController extends Controller
      */
     public function savePlan(PlanRequest $request)
     {
-        $request->validate([
-            'uuid' => 'nullable|uuid',
-            'name' => 'required|string',
-            'type' => 'required|string',
-            'meta_data' => 'nullable|array',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date',
-            'is_active' => 'nullable|boolean',
-        ]);
-
         try {
             $user = Auth::user();
 
@@ -83,13 +73,16 @@ class PlanController extends Controller
                 ]
             );
 
+            if ($request->boolean('is_active', true)) {
+                $this->deactivateOtherPlans($user->uuid, $plan->uuid, $request->type);
+            }
+
             return Response::json([
                 'message' => 'Plan saved successfully',
                 'data' => new PlanResource($plan)
             ], HttpFoundationResponse::HTTP_OK);
 
         } catch (\Error | \Exception $exception) {
-            DB::rollBack();
             Helper::logError('Unable to save plan', [__CLASS__, __FUNCTION__], $exception, $request->toArray());
             return Response::json([
                 'message' => 'Server Error Occurred'
@@ -125,5 +118,64 @@ class PlanController extends Controller
                 'message' => 'Server Error Occurred'
             ], HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    /**
+     * Update plan active status.
+     */
+    public function updatePlanStatus(Request $request)
+    {
+        try {
+            $user = Auth::user();
+
+            $data = $request->validate([
+                'plan_uuid' => 'required|uuid',
+                'type' => 'required|string',
+                'is_active' => 'required'
+            ]);
+
+            $plan = DB::transaction(function () use ($user, $data) {
+                if ($data['is_active']) {
+                    $this->deactivateOtherPlans($user->uuid, $data['plan_uuid'], $data['type']);
+                }
+
+                $plan = Plan::where('uuid', $data['plan_uuid'])
+                    ->where('user_uuid', $user->uuid)
+                    ->firstOrFail();
+
+                $plan->update(['is_active' => $data['is_active']]);
+
+                return $plan;
+            });
+
+            return Response::json([
+                'message' => 'Plan status updated successfully',
+                'data' => new PlanResource($plan)
+            ], HttpFoundationResponse::HTTP_OK);
+
+        } catch (\Throwable $exception) {
+
+            Helper::logError(
+                'Unable to update plan status',
+                [__CLASS__, __FUNCTION__],
+                $exception,
+                $request->toArray()
+            );
+
+            return Response::json([
+                'message' => 'Server Error Occurred'
+            ], HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Deactivate all plans of a given type except the specified plan.
+     */
+    private function deactivateOtherPlans(string $userUuid, string $planUuid, string $type): void
+    {
+        Plan::where('user_uuid', $userUuid)
+            ->where('type', $type)
+            ->where('uuid', '!=', $planUuid)
+            ->update(['is_active' => false]);
     }
 }

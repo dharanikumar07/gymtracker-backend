@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/diet', [DietController::class, 'getDietRoutine']);
     Route::get('/diet/available-foods', [DietController::class, 'getAvailableFoods']);
-    Route::patch('/diet', [DietController::class, 'saveDietPlanRoutine']);
+    Route::post('/diet', [DietController::class, 'saveDietPlanRoutine']);
     Route::delete('/diet/{uuid}', [DietController::class, 'deleteMealPlan']);
 
     Route::prefix('diet')->group(function () {
