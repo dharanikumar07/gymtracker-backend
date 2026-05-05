@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: gym-tracker-backend-staging
+    env: php
+    plan: free
+    rootDir: gym-tracker-backend
+    buildCommand: ./build-staging.sh
+    startCommand: php artisan serve --host=0.0.0.0 --port=$PORT
+    envVars:
+      - key: APP_ENV
+        value: staging
+      - key: APP_DEBUG
+        value: true
+      - key: APP_KEY
+        generateValue: true
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_URL
+        fromConfig: true
+      - key: REDIS_URL
+        fromConfig: true
+      - key: CACHE_STORE
+        value: redis
+      - key: SESSION_DRIVER
+        value: redis
+      - key: QUEUE_CONNECTION
+        value: redis
+      - key: LOG_CHANNEL
+        value: errorlog
