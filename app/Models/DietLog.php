@@ -16,10 +16,11 @@ class DietLog extends Model
 
     protected $casts = [
         'actual_quantity' => 'decimal:2',
-        'calories' => 'integer',
-        'protein' => 'integer',
-        'carbs' => 'integer',
-        'fats' => 'integer',
+        'calories' => 'float',
+        'protein' => 'float',
+        'carbs' => 'float',
+        'fats' => 'float',
+        'food_data' => 'array',
         'nutrition_data' => 'array',
     ];
 

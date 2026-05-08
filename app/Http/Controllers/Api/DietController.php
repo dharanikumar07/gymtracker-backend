@@ -158,7 +158,7 @@ class DietController extends Controller
     /**
      * Update the diet routine.
      */
-    public function saveDietPlanRoutine (Request $request)
+    public function saveDietPlanRoutine(Request $request)
     {
         try {
             $user = Auth::user();
