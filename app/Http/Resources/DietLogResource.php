@@ -5,23 +5,23 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class MealPlanResource extends JsonResource
+class DietLogResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
         return [
             'uuid' => $this->uuid,
-            'user_uuid' => $this->user_uuid,
-            'plan_uuid' => $this->plan_uuid,
-            'meal_name' => $this->meal_name,
+            'meal_plan_uuid' => $this->meal_plan_uuid,
+            'meal_name' => $this->whenLoaded('mealPlan', $this->mealPlan->meal_name),
             'day' => $this->day,
-            'time_period' => $this->time_period,
+            'type' => $this->type,
+            'status' => $this->status,
+            'reason' => $this->reason,
             'food_data' => $this->food_data,
             'calories' => $this->calories,
             'protein' => $this->protein,
             'carbs' => $this->carbs,
             'fats' => $this->fats,
-            'nutrition_data' => $this->nutrition_data,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

@@ -13,5 +13,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('diet')->group(function () {
         Route::get('/log', [DietLogController::class, 'getDietLogs']);
         Route::post('/log', [DietLogController::class, 'saveDietLog']);
+        Route::delete('/log/{uuid}', [DietLogController::class, 'deleteDietLog']);
     });
 });
