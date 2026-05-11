@@ -288,7 +288,11 @@ class ExpenseController extends Controller
 
             $fixedExpenses = ExpenseCategory::where('user_uuid', $user->uuid)
                 ->where('expense_period', 'fixed')
-                ->get(['uuid', 'category_type', 'default_amount', 'expense_period']);
+                ->get(['uuid', 'category_type', 'default_amount', 'expense_period'])
+                ->map(function ($item) {
+                    $item->category_name = Helper::deslugifyCategory($item->category_type);
+                    return $item;
+                });
 
             return response()->json([
                 'expenses' => $fixedExpenses
@@ -312,7 +316,12 @@ class ExpenseController extends Controller
         ]);
 
         try {
-            $this->expenseService->storeBulk($request->fixed_expenses);
+            $fixedExpenses = collect($request->fixed_expenses)->map(function ($expense) {
+                $expense['category_type'] = Helper::slugifyCategory($expense['category_type']);
+                return $expense;
+            })->toArray();
+
+            $this->expenseService->storeBulk($fixedExpenses);
 
             return response()->json([
                 'message' => 'Fixed expenses saved successfully'
@@ -320,6 +329,32 @@ class ExpenseController extends Controller
 
         } catch (\Error | \Exception $exception) {
             Helper::logError('Unable to save fixed expenses', [__CLASS__, __FUNCTION__], $exception, $request->toArray());
+            return response(['errors' => $exception->getMessage()], HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Delete an expense category.
+     */
+    public function deleteExpense($uuid)
+    {
+        try {
+            $user = Auth::user();
+
+            $category = ExpenseCategory::where('uuid', $uuid)
+                ->where('user_uuid', $user->uuid)
+                ->first();
+
+            throw_if(!$category, new \Exception('Expense category not found'));
+
+            $category->delete();
+
+            return response()->json([
+                'message' => 'Expense deleted successfully'
+            ], HttpFoundationResponse::HTTP_OK);
+
+        } catch (\Throwable $exception) {
+            Helper::logError('Unable to delete expense', [__CLASS__, __FUNCTION__], $exception, ['uuid' => $uuid]);
             return response(['errors' => $exception->getMessage()], HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

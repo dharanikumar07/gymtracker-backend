@@ -42,6 +42,16 @@ class Helper
         Log::warning([$message => $data]);
     }
 
+    public static function slugifyCategory($value)
+    {
+        return str_replace(' ', '_', trim($value));
+    }
+
+    public static function deslugifyCategory($value)
+    {
+        return str_replace('_', ' ', $value);
+    }
+
     public static function getAvailableDietWeightedUnits()
     {
         return [

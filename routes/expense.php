@@ -8,6 +8,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('expenses')->group(function () {
         Route::get('/', [ExpenseController::class, 'getExpense']);
         Route::post('/', [ExpenseController::class, 'saveExpense']);
+        Route::delete('/{uuid}', [ExpenseController::class, 'deleteExpense']);
     });
     Route::get('/log', [ExpenseLogController::class, 'index']);
     Route::post('/log', [ExpenseLogController::class, 'log']);
