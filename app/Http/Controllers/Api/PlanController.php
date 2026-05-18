@@ -7,6 +7,7 @@ use App\Http\Helpers\Helper;
 use App\Http\Requests\PlanRequest;
 use App\Http\Resources\PlanResource;
 use App\Models\Plan;
+use App\Services\BudgetService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -77,6 +78,10 @@ class PlanController extends Controller
                 $this->deactivateOtherPlans($user->uuid, $plan->uuid, $request->type);
             }
 
+            if($request->type == 'budget') {
+                app(BudgetService::class)->createInitialCycle($plan);
+            }
+
             return Response::json([
                 'message' => 'Plan saved successfully',
                 'data' => new PlanResource($plan)
@@ -145,6 +150,15 @@ class PlanController extends Controller
 
                 $plan->update(['is_active' => $data['is_active']]);
 
+                if ($data['type'] === 'budget') {
+                    $budgetService = app(\App\Services\BudgetService::class);
+                    if ($data['is_active']) {
+                        $budgetService->resumeActiveCycle($plan->uuid);
+                    } else {
+                        $budgetService->pauseActiveCycle($plan->uuid);
+                    }
+                }
+
                 return $plan;
             });
 
@@ -173,9 +187,17 @@ class PlanController extends Controller
      */
     private function deactivateOtherPlans(string $userUuid, string $planUuid, string $type): void
     {
-        Plan::where('user_uuid', $userUuid)
+        $deactivatedPlans = Plan::where('user_uuid', $userUuid)
             ->where('type', $type)
             ->where('uuid', '!=', $planUuid)
-            ->update(['is_active' => false]);
+            ->where('is_active', true)
+            ->get();
+
+        foreach ($deactivatedPlans as $plan) {
+            $plan->update(['is_active' => false]);
+            if ($type === 'budget') {
+                app(\App\Services\BudgetService::class)->pauseActiveCycle($plan->uuid);
+            }
+        }
     }
 }
