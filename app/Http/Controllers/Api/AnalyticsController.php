@@ -40,7 +40,7 @@ class AnalyticsController extends Controller
                 ->first();
 
             $activeBudgetPlan = Plan::where('user_uuid', $user->uuid)
-                ->where('type', 'expense')
+                ->where('type', 'budget')
                 ->where('is_active', true)
                 ->first();
 
@@ -341,7 +341,7 @@ class AnalyticsController extends Controller
             $endDate = Carbon::today();
 
             $activePlan = Plan::where('user_uuid', $user->uuid)
-                ->where('type', 'expense')
+                ->where('type', 'budget')
                 ->where('is_active', true)
                 ->first();
 

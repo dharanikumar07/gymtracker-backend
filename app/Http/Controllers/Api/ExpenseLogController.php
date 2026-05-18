@@ -4,143 +4,152 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\Helper;
+use App\Services\BudgetService;
 use App\Services\ExpenseService;
 use App\Models\ExpenseCategory;
 use App\Models\ExpenseLog;
+use App\Models\BudgetPlanCycle;
 use App\Models\Plan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Response;
 use Symfony\Component\HttpFoundation\Response as HttpFoundationResponse;
 
 class ExpenseLogController extends Controller
 {
+    protected $budgetService;
     protected $expenseService;
 
-    public function __construct(ExpenseService $expenseService)
+    public function __construct(BudgetService $budgetService, ExpenseService $expenseService)
     {
+        $this->budgetService = $budgetService;
         $this->expenseService = $expenseService;
     }
 
-    /**
-     * Get expense dashboard data.
-     */
     public function index(Request $request)
     {
         try {
             $user = Auth::user();
-            $date = $request->query('date', now()->toDateString());
-            $startDate = $request->query('start_date', now()->startOfMonth()->toDateString());
-            $endDate = $request->query('end_date', now()->endOfMonth()->toDateString());
-            
-            // 1. Fixed Commitment
-            $fixedCommitment = ExpenseCategory::where('user_uuid', $user->uuid)
-                ->where('expense_period', 'fixed')
-                ->sum('default_amount');
+            $date = $request->input('date', now()->toDateString());
 
-            // 2. Total Variable Spend (Current Month)
-            $totalVariableSpend = ExpenseLog::where('user_uuid', $user->uuid)
-                ->whereMonth('expense_date', now()->month)
-                ->whereYear('expense_date', now()->year)
-                ->sum('amount');
+            $cycle = $this->budgetService->resolveActiveCycle($user, $date);
 
-            // 3. Total Monthly Spend
-            $totalMonthlySpend = $fixedCommitment + $totalVariableSpend;
+            $planSummary = $cycle ? $this->budgetService->getCycleSummary($cycle) : null;
+            $fixedCommitments = $this->expenseService->getFixedCommitments($user, $cycle);
+            $dailyLogs = $this->expenseService->getDailyLogs($user, $date);
 
-            // Fixed Expenses List
-            $fixedExpenses = ExpenseCategory::where('user_uuid', $user->uuid)
-                ->where('expense_period', 'fixed')
-                ->get();
-
-            // All Category Types
-            $allCategories = ExpenseCategory::where('user_uuid', $user->uuid)
-                ->select('category_type')
-                ->distinct()
-                ->pluck('category_type');
-            
-            // Daily Logs
-            $dailyLogs = ExpenseLog::where('user_uuid', $user->uuid)
-                ->where('expense_date', $date)
-                ->orderBy('created_at', 'desc')
-                ->get();
-
-            // Filtered Logs (Recent Activity)
-            $filteredLogs = ExpenseLog::where('user_uuid', $user->uuid)
-                ->whereBetween('expense_date', [$startDate, $endDate])
-                ->with('category')
-                ->orderBy('expense_date', 'desc')
-                ->get();
-
-            // Budget Plans
-            $budgetPlans = Plan::where('user_uuid', $user->uuid)
-                ->where('type', 'expense')
-                ->orderBy('created_at', 'desc')
-                ->get();
-
-            return response()->json([
-                'summary' => [
-                    'variable_spend' => (int)$totalVariableSpend,
-                    'fixed_commitment' => (int)$fixedCommitment,
-                    'total_spend' => (int)$totalMonthlySpend,
-                ],
-                'fixed_expenses' => $fixedExpenses,
-                'all_categories' => $allCategories,
+            return Response::json([
+                'plan_summary' => $planSummary,
+                'fixed_commitments' => $fixedCommitments,
                 'daily_logs' => $dailyLogs,
-                'filtered_logs' => $filteredLogs,
-                'budget_plans' => $budgetPlans
             ], HttpFoundationResponse::HTTP_OK);
 
-        } catch (\Error | \Exception $exception) {
-            \App\Http\Helpers\Helper::logError('Unable to fetch expenses', [__CLASS__, __FUNCTION__], $exception);
-            return response(['errors' => $exception->getMessage()], HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR);
+        } catch (\Exception $e) {
+            Helper::logError('Unable to fetch expense logs',[__CLASS__, __FUNCTION__], $e, $request->toArray());
+            return Response::json([
+                'message' => 'Server Error Occurred'
+            ], HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
-    /**
-     * Log a daily expense (POST for Create/Update).
-     */
     public function log(Request $request)
     {
-        $request->validate([
-            'uuid' => 'nullable|uuid',
-            'category_type' => 'required|string',
-            'name' => 'required|string',
-            'amount' => 'required|numeric',
-            'expense_period' => 'required|in:fixed,variable',
-            'expense_date' => 'nullable|date',
-        ]);
+        DB::beginTransaction();
 
         try {
-            $data = $this->expenseService->logExpense($request->all());
+            $user = Auth::user();
+            $date = $request->input('expense_date', now()->toDateString());
 
-            return response()->json([
-                'message' => 'Expense updated/logged successfully',
-                'data' => $data
+            $cycle = BudgetPlanCycle::where('user_uuid', $user->uuid)
+                ->where('cycle_start', '<=', $date)
+                ->where('cycle_end', '>=', $date)
+                ->where('status', 'active')
+                ->first();
+
+            throw_if(!$cycle, new \Exception("No active budget cycle found for this date. Please activate a plan first."));
+
+            $categoryUuid = $request->input('category_uuid');
+
+            if (!$categoryUuid) {
+                $category = $this->expenseService->createExpenseCategory([
+                    'category_name' => $request->input('category_name'),
+                    'expense_period' => $request->boolean('is_fixed') ? 'fixed' : 'variable',
+                    'default_amount' => $request->boolean('is_fixed') ? $request->input('amount') : 0
+                ], $user, $cycle->plan_uuid);
+                $categoryUuid = $category->uuid;
+            }
+
+            $log = ExpenseLog::updateOrCreate(
+                [
+                    'user_uuid' => $user->uuid,
+                    'plan_cycle_uuid' => $cycle->uuid,
+                    'category_uuid' => $categoryUuid,
+                    'name' => $request->input('name'),
+                    'expense_date' => $date,
+                ],
+                [
+                    'amount' => $request->input('amount'),
+                ]
+            );
+
+            $this->budgetService->syncCycleTotals($cycle);
+
+            DB::commit();
+
+            return Response::json([
+                'message' => 'Expense logged successfully',
+                'data' => $log
             ], HttpFoundationResponse::HTTP_OK);
 
-        } catch (\Error | \Exception $exception) {
-            \App\Http\Helpers\Helper::logError('Unable to log daily expense', [__CLASS__, __FUNCTION__], $exception, $request->toArray());
-            return response(['errors' => $exception->getMessage()], HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR);
+        } catch (\Exception $e) {
+            DB::rollback();
+            Helper::logError('Unable to log expense', [__CLASS__, __FUNCTION__], $e, $request->toArray());
+            return Response::json([
+                'message' => 'Server Error Occurred'
+            ], HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     /**
-     * Delete an expense log.
+     * Delete an expense log and sync totals.
      */
     public function destroy($uuid)
     {
         try {
             $user = Auth::user();
             $log = ExpenseLog::where('uuid', $uuid)->where('user_uuid', $user->uuid)->firstOrFail();
+            $cycleUuid = $log->plan_cycle_uuid;
+            
             $log->delete();
 
-            return response()->json([
-                'message' => 'Expense deleted successfully',
-            ], HttpFoundationResponse::HTTP_OK);
+            $cycle = BudgetPlanCycle::findByUuid($cycleUuid);
+            $this->budgetService->syncCycleTotals($cycle);
 
-        } catch (\Error | \Exception $exception) {
-            \App\Http\Helpers\Helper::logError('Unable to delete expense', [__CLASS__, __FUNCTION__], $exception, ['uuid' => $uuid]);
-            return response(['errors' => $exception->getMessage()], HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR);
+            return response()->json(['message' => 'Expense deleted successfully'], HttpFoundationResponse::HTTP_OK);
+        } catch (\Exception $e) {
+            Helper::logError('Unable to delete expense', [__CLASS__, __FUNCTION__], $e);
+            return response(['errors' => $e->getMessage()], HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    public function getAvailableCategories(Request $request)
+    {
+        $user = Auth::user();
+        $planUuid = $request->query('plan_uuid');
+
+        $categories = ExpenseCategory::where('user_uuid', $user->uuid)
+            ->where('expense_period', 'variable')
+            ->when($planUuid, function ($query) use ($planUuid) {
+                return $query->where('plan_uuid', $planUuid);
+            })
+            ->get()
+            ->map(fn($cat) => [
+                'uuid' => $cat->uuid,
+                'name' => Helper::deslugifyCategory($cat->category_type),
+                'type' => $cat->category_type
+            ]);
+
+        return response()->json(['categories' => $categories]);
     }
 }

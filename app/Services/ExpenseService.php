@@ -14,13 +14,13 @@ class ExpenseService
     /**
      * Store bulk expense categories (Onboarding setup).
      */
-    public function storeBulk(array $expenses)
+    public function storeBulk(array $expenses, $planUuid = null)
     {
         DB::beginTransaction();
         try {
             $user = Auth::user();
             foreach ($expenses as $expense) {
-                $this->createExpenseCategory($expense, $user);
+                $this->createExpenseCategory($expense, $user, $planUuid);
             }
             DB::commit();
             return true;
@@ -30,62 +30,67 @@ class ExpenseService
             throw $e;
         }
     }
-
     /**
-     * Log a daily expense OR set up a fixed category.
+     * Delete an expense category.
      */
-    public function logExpense(array $data)
+    public function deleteExpenseCategory(string $uuid)
     {
-        return DB::transaction(function () use ($data) {
+        return DB::transaction(function () use ($uuid) {
             $user = Auth::user();
-            $period = $data['expense_period'] ?? 'variable';
-            $date = $data['expense_date'] ?? now()->toDateString();
+            $category = ExpenseCategory::where('uuid', $uuid)
+                ->where('user_uuid', $user->uuid)
+                ->firstOrFail();
 
-            // 1. Find or create the category
-            $category = ExpenseCategory::updateOrCreate(
-                [
-                    'user_uuid' => $user->uuid,
-                    'category_type' => $data['category_type'],
-                ],
-                [
-                    'expense_period' => $period,
-                    'default_amount' => ($period === 'fixed') ? $data['amount'] : 0,
-                ]
-            );
-
-            // 2. Log entry (Update by UUID if provided, else by User/Category/Name/Date)
-            $logMatch = ['user_uuid' => $user->uuid, 'category_uuid' => $category->uuid, 'name' => $data['name'], 'expense_date' => $date];
-            if (isset($data['uuid']) && !empty($data['uuid'])) {
-                $logMatch = ['uuid' => $data['uuid'], 'user_uuid' => $user->uuid];
-            }
-
-            $log = ExpenseLog::updateOrCreate(
-                $logMatch,
-                [
-                    'amount' => $data['amount'],
-                    'notes' => $data['notes'] ?? null,
-                ]
-            );
-
-            return [
-                'category' => $category,
-                'log' => $log
-            ];
+            return $category->delete();
         });
     }
 
-    private function createExpenseCategory(array $expense, $user)
+    public function createExpenseCategory(array $expense, $user, $planUuid = null)
     {
-        ExpenseCategory::updateOrCreate(
+        return ExpenseCategory::updateOrCreate(
             [
                 'user_uuid' => $user->uuid,
-                'category_type' => $expense['category_type'],
+                'category_type' => Helper::slugifyCategory($expense['category_name']),
+                'plan_uuid' => $planUuid,
             ],
             [
-                'uuid' => Str::uuid(),
                 'expense_period' => $expense['expense_period'] ?? 'fixed',
                 'default_amount' => $expense['default_amount'],
             ]
         );
+    }
+
+    public function getFixedCommitments($user, $cycle)
+    {
+        $planUuid = $cycle ? $cycle->plan_uuid : null;
+
+        return ExpenseCategory::where('user_uuid', $user->uuid)
+            ->where('expense_period', 'fixed')
+            ->when($planUuid, function ($query) use ($planUuid) {
+                return $query->where('plan_uuid', $planUuid);
+            })
+            ->get()
+            ->map(fn($cat) => [
+                'uuid' => $cat->uuid,
+                'name' => Helper::deslugifyCategory($cat->category_type),
+                'amount' => (float)$cat->default_amount,
+                'is_paid' => $cycle && ExpenseLog::where('plan_cycle_uuid', $cycle->uuid)
+                    ->where('category_uuid', $cat->uuid)
+                    ->exists()
+            ]);
+    }
+
+    public function getDailyLogs($user, $date)
+    {
+        return ExpenseLog::where('user_uuid', $user->uuid)
+            ->where('expense_date', $date)
+            ->with('category')
+            ->get()
+            ->map(fn($log) => [
+                'uuid' => $log->uuid,
+                'name' => $log->name,
+                'amount' => (float)$log->amount,
+                'category_name' => Helper::deslugifyCategory($log->category->category_type ?? 'Other'),
+            ]);
     }
 }

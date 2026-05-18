@@ -65,7 +65,7 @@ class DashboardController extends Controller
     {
         $fitnessPlan = Plan::where('user_uuid', $user->uuid)->where('type', 'physical_activity')->where('is_active', true)->first();
         $dietPlan = Plan::where('user_uuid', $user->uuid)->where('type', 'diet')->where('is_active', true)->first();
-        $budgetPlan = Plan::where('user_uuid', $user->uuid)->where('type', 'expense')->where('is_active', true)->first();
+        $budgetPlan = Plan::where('user_uuid', $user->uuid)->where('type', 'budget')->where('is_active', true)->first();
 
         $workoutCount = PhysicalActivityTracker::where('user_uuid', $user->uuid)
             ->whereDate('activity_date', Carbon::today())
@@ -147,7 +147,7 @@ class DashboardController extends Controller
         $hasProfile = !empty($user->name) && !empty($user->email);
         $hasFitnessPlan = Plan::where('user_uuid', $user->uuid)->where('type', 'physical_activity')->where('is_active', true)->exists();
         $hasDietPlan = Plan::where('user_uuid', $user->uuid)->where('type', 'diet')->where('is_active', true)->exists();
-        $hasBudgetPlan = Plan::where('user_uuid', $user->uuid)->where('type', 'expense')->where('is_active', true)->exists();
+        $hasBudgetPlan = Plan::where('user_uuid', $user->uuid)->where('type', 'budget')->where('is_active', true)->exists();
 
         $items = [
             ['id' => 'profile', 'title' => 'Complete your profile', 'completed' => $hasProfile],

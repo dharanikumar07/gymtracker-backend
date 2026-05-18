@@ -10,7 +10,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/', [ExpenseController::class, 'saveExpense']);
         Route::delete('/{uuid}', [ExpenseController::class, 'deleteExpense']);
     });
-    Route::get('/log', [ExpenseLogController::class, 'index']);
-    Route::post('/log', [ExpenseLogController::class, 'log']);
-    Route::delete('/log/{uuid}', [ExpenseLogController::class, 'destroy']);
+        Route::get('/log', [ExpenseLogController::class, 'index']);
+        Route::get('/get-available-categories', [ExpenseLogController::class, 'getAvailableCategories']);
+        Route::post('/log', [ExpenseLogController::class, 'log']);
+        Route::delete('/log/{uuid}', [ExpenseLogController::class, 'destroy']);
 });

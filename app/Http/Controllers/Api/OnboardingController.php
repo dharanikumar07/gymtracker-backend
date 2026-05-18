@@ -133,22 +133,47 @@ class OnboardingController extends Controller
         try {
             $user = Auth::user();
             $data = $request->validate([
-                'expenses' => 'array'
+                'expenses' => 'array',
+                'plan' => 'nullable|array'
             ]);
 
-            if (!empty($data['expenses'] ?? [])) {
-                (new ExpenseService())->storeBulk($data['expenses']);
+            DB::beginTransaction();
+
+            $planUuid = null;
+
+            if (!empty($data['plan'])) {
+                $plan = Plan::updateOrCreate(
+                    [
+                        'user_uuid' => $user->uuid,
+                        'type' => 'budget',
+                    ],
+                    [
+                        'name' => $data['plan']['name'],
+                        'start_date' => $data['plan']['start_date'],
+                        'meta_data' => $data['plan']['meta_data'],
+                        'is_active' => $data['plan']['is_active'],
+                    ]
+                );
+                $planUuid = $plan->uuid;
+                (new ExpenseService())->storeBulk($data['expenses'], $planUuid);
+                // Trigger initial cycle creation for budget plan
+                app(\App\Services\BudgetService::class)->createInitialCycle($plan);
+
+                
             }
 
             $user->update([
                 'is_onboarding_completed' => true
             ]);
 
+            DB::commit();
+
             return Response::json([
                 'message' => 'Onboarding completed successfully'
             ], HttpFoundationResponse::HTTP_OK);
 
         } catch (\Exception $e) {
+            DB::rollBack();
             Helper::logError(
                 'Unable to complete onboarding',
                 [__CLASS__, __FUNCTION__],
