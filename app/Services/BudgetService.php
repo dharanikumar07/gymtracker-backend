@@ -49,6 +49,10 @@ class BudgetService
         $today = now()->toDateString();
         $daysRemaining = (strtotime($cycle->cycle_end) - strtotime($today)) / (60 * 60 * 24);
 
+        $plannedFixedTotal = (float)collect($cycle->meta_data['fixed_snapshot'] ?? [])->sum('amount');
+        $safeToSpend = (float)($cycle->budget_amount - $plannedFixedTotal - $cycle->variable_expense_total);
+        $safePercentage = $cycle->budget_amount > 0 ? max(0, min(100, ($safeToSpend / $cycle->budget_amount) * 100)) : 0;
+
         return [
             'cycle_uuid' => $cycle->uuid,
             'plan_uuid' => $cycle->plan_uuid,
@@ -61,6 +65,9 @@ class BudgetService
             'total_spent' => (float)($cycle->fixed_expense_total + $cycle->variable_expense_total),
             'fixed_spent' => (float)$cycle->fixed_expense_total,
             'variable_spent' => (float)$cycle->variable_expense_total,
+            'planned_fixed_total' => $plannedFixedTotal,
+            'safe_to_spend_amount' => $safeToSpend,
+            'safe_to_spend_percentage' => (float)$safePercentage,
         ];
     }
 
@@ -85,21 +92,12 @@ class BudgetService
 
         $budgetAmount = $plan->meta_data['amount'] ?? 0;
 
-        $fixedExpenses = ExpenseCategory::where('user_uuid', $plan->user_uuid)
+        $fixedCategories = ExpenseCategory::where('user_uuid', $plan->user_uuid)
             ->where('plan_uuid', $plan->uuid)
             ->where('expense_period', 'fixed')
             ->get();
 
-        $fixedTotal = $fixedExpenses->sum('default_amount');
-        
-        $existing = BudgetPlanCycle::where('user_uuid', $plan->user_uuid)
-            ->where('plan_uuid', $plan->uuid)
-            ->where('cycle_start', $startDate->toDateString())
-            ->first();
-
-        $variableTotal = $existing ? $existing->variable_expense_total : 0;
-
-        return BudgetPlanCycle::updateOrCreate(
+        $cycle = BudgetPlanCycle::updateOrCreate(
             [
                 'user_uuid' => $plan->user_uuid,
                 'plan_uuid' => $plan->uuid,
@@ -108,13 +106,10 @@ class BudgetService
             ],
             [
                 'budget_amount' => $budgetAmount,
-                'fixed_expense_total' => $fixedTotal,
-                'variable_expense_total' => $variableTotal,
-                'remaining_amount' => $budgetAmount - $fixedTotal - $variableTotal,
                 'status' => $status,
                 'meta_data' => [
                     'type' => $type,
-                    'fixed_snapshot' => $fixedExpenses->map(fn($e) => [
+                    'fixed_snapshot' => $fixedCategories->map(fn($e) => [
                         'category_uuid' => $e->uuid,
                         'name' => Helper::deslugifyCategory($e->category_type),
                         'amount' => $e->default_amount
@@ -122,6 +117,87 @@ class BudgetService
                 ]
             ]
         );
+
+        $this->syncCycleTotals($cycle);
+        
+        return $cycle;
+    }
+
+    /**
+     * Calculates the actual spent amount for fixed and variable categories.
+     */
+    public function calculateActualSpent(BudgetPlanCycle $cycle)
+    {
+        $totals = ExpenseLog::where('plan_cycle_uuid', $cycle->uuid)
+            ->join('expense_categories', 'expense_categories.uuid', '=', 'expense_logs.category_uuid')
+            ->selectRaw("
+                SUM(CASE WHEN expense_categories.expense_period = 'fixed' THEN expense_logs.amount ELSE 0 END) as fixed_total,
+                SUM(CASE WHEN expense_categories.expense_period = 'variable' THEN expense_logs.amount ELSE 0 END) as variable_total
+            ")
+            ->first();
+
+        return [
+            'fixed' => (float)($totals->fixed_total ?? 0),
+            'variable' => (float)($totals->variable_total ?? 0)
+        ];
+    }
+
+    /**
+     * Sync totals for the current active cycle based on actual logs.
+     */
+    public function syncCycleTotals(BudgetPlanCycle $cycle)
+    {
+        $actual = $this->calculateActualSpent($cycle);
+        
+        $cycle->update([
+            'fixed_expense_total' => $actual['fixed'],
+            'variable_expense_total' => $actual['variable'],
+            'remaining_amount' => $cycle->budget_amount - $actual['fixed'] - $actual['variable']
+        ]);
+    }
+
+    /**
+     * Recalculate the fixed categories snapshot for the active cycle.
+     * Note: This no longer forces the fixed_expense_total column.
+     */
+    public function recalculateCurrentFixedExpenses($userUuid)
+    {
+        $activeCycle = BudgetPlanCycle::where('user_uuid', $userUuid)
+            ->where('status', 'active')
+            ->where('cycle_start', '<=', now()->toDateString())
+            ->where('cycle_end', '>=', now()->toDateString())
+            ->first();
+
+        if ($activeCycle) {
+            $fixedCategories = ExpenseCategory::where('user_uuid', $userUuid)
+                ->where('plan_uuid', $activeCycle->plan_uuid)
+                ->where('expense_period', 'fixed')
+                ->get();
+
+            $metaData = $activeCycle->meta_data ?? [];
+            $metaData['fixed_snapshot'] = $fixedCategories->map(fn($e) => [
+                'category_uuid' => $e->uuid,
+                'name' => Helper::deslugifyCategory($e->category_type),
+                'amount' => $e->default_amount
+            ])->toArray();
+
+            $activeCycle->update(['meta_data' => $metaData]);
+            
+            // Re-sync totals to ensure it reflects current logs (in case categories changed type)
+            $this->syncCycleTotals($activeCycle);
+        }
+    }
+
+    /**
+     * Mark past active cycles as completed.
+     */
+    public function completeExpiredCycles()
+    {
+        $today = now()->toDateString();
+        
+        BudgetPlanCycle::where('status', 'active')
+            ->where('cycle_end', '<', $today)
+            ->update(['status' => 'completed']);
     }
 
     /**
@@ -138,7 +214,7 @@ class BudgetService
             return $this->updateOrCreateCycle($plan, $nextStart, 'active');
         });
     }
-    
+
     /**
      * Pause active cycle when a plan is deactivated.
      */
@@ -158,64 +234,5 @@ class BudgetService
             ->where('status', 'paused')
             ->where('cycle_end', '>=', now()->toDateString())
             ->update(['status' => 'active']);
-    }
-
-    /**
-     * Sync totals for the current active cycle (e.g. after adding an expense).
-     */
-    public function syncCycleTotals(BudgetPlanCycle $cycle)
-    {
-        $variableTotal = ExpenseLog::where('plan_cycle_uuid', $cycle->uuid)->sum('amount');
-        
-        $cycle->update([
-            'variable_expense_total' => $variableTotal,
-            'remaining_amount' => $cycle->budget_amount - $cycle->fixed_expense_total - $variableTotal
-        ]);
-    }
-
-    /**
-     * Recalculate fixed expenses for the CURRENT active cycle only.
-     */
-    public function recalculateCurrentFixedExpenses($userUuid)
-    {
-        $activeCycle = BudgetPlanCycle::where('user_uuid', $userUuid)
-            ->where('status', 'active')
-            ->where('cycle_start', '<=', now()->toDateString())
-            ->where('cycle_end', '>=', now()->toDateString())
-            ->first();
-
-        if ($activeCycle) {
-            $fixedExpenses = ExpenseCategory::where('user_uuid', $userUuid)
-                ->where('plan_uuid', $activeCycle->plan_uuid)
-                ->where('expense_period', 'fixed')
-                ->get();
-
-            $fixedTotal = $fixedExpenses->sum('default_amount');
-            
-            $metaData = $activeCycle->meta_data ?? [];
-            $metaData['fixed_snapshot'] = $fixedExpenses->map(fn($e) => [
-                'category_uuid' => $e->uuid,
-                'name' => Helper::deslugifyCategory($e->category_type),
-                'amount' => $e->default_amount
-            ])->toArray();
-
-            $activeCycle->update([
-                'fixed_expense_total' => $fixedTotal,
-                'remaining_amount' => $activeCycle->budget_amount - $fixedTotal - $activeCycle->variable_expense_total,
-                'meta_data' => $metaData
-            ]);
-        }
-    }
-
-    /**
-     * Mark past active cycles as completed.
-     */
-    public function completeExpiredCycles()
-    {
-        $today = now()->toDateString();
-        
-        BudgetPlanCycle::where('status', 'active')
-            ->where('cycle_end', '<', $today)
-            ->update(['status' => 'completed']);
     }
 }

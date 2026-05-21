@@ -136,20 +136,16 @@ class ExpenseLogController extends Controller
     public function getAvailableCategories(Request $request)
     {
         $user = Auth::user();
-        $planUuid = $request->query('plan_uuid');
 
         $categories = ExpenseCategory::where('user_uuid', $user->uuid)
             ->where('expense_period', 'variable')
-            ->when($planUuid, function ($query) use ($planUuid) {
-                return $query->where('plan_uuid', $planUuid);
-            })
             ->get()
             ->map(fn($cat) => [
-                'uuid' => $cat->uuid,
                 'name' => Helper::deslugifyCategory($cat->category_type),
+                'amount' => $cat->default_amount,
                 'type' => $cat->category_type
             ]);
-
+        info(print_r($categories,true));
         return response()->json(['categories' => $categories]);
     }
 }

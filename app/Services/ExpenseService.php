@@ -70,14 +70,19 @@ class ExpenseService
                 return $query->where('plan_uuid', $planUuid);
             })
             ->get()
-            ->map(fn($cat) => [
-                'uuid' => $cat->uuid,
-                'name' => Helper::deslugifyCategory($cat->category_type),
-                'amount' => (float)$cat->default_amount,
-                'is_paid' => $cycle && ExpenseLog::where('plan_cycle_uuid', $cycle->uuid)
+            ->map(function($cat) use ($cycle) {
+                $log = $cycle ? ExpenseLog::where('plan_cycle_uuid', $cycle->uuid)
                     ->where('category_uuid', $cat->uuid)
-                    ->exists()
-            ]);
+                    ->first() : null;
+
+                return [
+                    'uuid' => $cat->uuid,
+                    'name' => Helper::deslugifyCategory($cat->category_type),
+                    'amount' => (float)$cat->default_amount,
+                    'is_paid' => !!$log,
+                    'paid_date' => $log ? \Carbon\Carbon::parse($log->expense_date)->format('d M') : null
+                ];
+            });
     }
 
     public function getDailyLogs($user, $date)
@@ -91,6 +96,7 @@ class ExpenseService
                 'name' => $log->name,
                 'amount' => (float)$log->amount,
                 'category_name' => Helper::deslugifyCategory($log->category->category_type ?? 'Other'),
+                'is_fixed' => ($log->category->expense_period ?? 'variable') === 'fixed',
             ]);
     }
 }
