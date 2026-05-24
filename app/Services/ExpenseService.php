@@ -20,7 +20,7 @@ class ExpenseService
         try {
             $user = Auth::user();
             foreach ($expenses as $expense) {
-                $this->createExpenseCategory($expense, $user, $planUuid);
+                $this->UpdateOrCreateExpenseCategory($expense, $user, $planUuid);
             }
             DB::commit();
             return true;
@@ -45,7 +45,7 @@ class ExpenseService
         });
     }
 
-    public function createExpenseCategory(array $expense, $user, $planUuid = null)
+    public function UpdateOrCreateExpenseCategory(array $expense, $user, $planUuid = null)
     {
         return ExpenseCategory::updateOrCreate(
             [
@@ -93,7 +93,6 @@ class ExpenseService
             ->get()
             ->map(fn($log) => [
                 'uuid' => $log->uuid,
-                'name' => $log->name,
                 'amount' => (float)$log->amount,
                 'category_name' => Helper::deslugifyCategory($log->category->category_type ?? 'Other'),
                 'is_fixed' => ($log->category->expense_period ?? 'variable') === 'fixed',
