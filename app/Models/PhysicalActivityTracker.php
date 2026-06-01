@@ -24,4 +24,9 @@ class PhysicalActivityTracker extends Model
     {
         return $this->belongsTo(PhysicalActivitySlot::class, 'slot_uuid', 'uuid');
     }
+
+    public function plan()
+    {
+        return $this->belongsTo(Plan::class, 'plan_uuid', 'uuid');
+    }
 }
