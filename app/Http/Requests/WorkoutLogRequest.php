@@ -27,6 +27,8 @@ class WorkoutLogRequest extends FormRequest
             'logs.*.type' => ['nullable', 'string'],
             'logs.*.status' => ['nullable', 'string'],
             'logs.*.reason' => ['nullable', 'string'],
+            'logs.*.meta_data' => ['required', 'array'],
+            'logs.*.meta_data.target_muscles' => ['required', 'array', 'min:1'],
         ];
     }
 
@@ -39,6 +41,8 @@ class WorkoutLogRequest extends FormRequest
             'day.in' => 'Day must be a valid day (mon, tue, wed, thu, fri, sat, sun)',
             'logs.required' => 'At least one log entry is required',
             'logs.*.metrics_data.required' => 'Metrics data is required for each log',
+            'logs.*.meta_data.target_muscles.required' => 'At least one targeted muscle is required.',
+            'logs.*.meta_data.target_muscles.min' => 'At least one targeted muscle is required.',
         ];
     }
 

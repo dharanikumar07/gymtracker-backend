@@ -16,12 +16,10 @@ class FlexibilityAndYoga extends AbstractPhysicalActivity
             'flexibility_yoga' => [
 
                 'Mon' => [
-                    'target_muscles' => ['full_body'],
                     'workouts' => [
-
                         [
                             'name' => 'Sun Salutation (Surya Namaskar)',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['full_body', 'mobility', 'flexibility', 'shoulders', 'chest', 'hamstrings', 'core'],
                             'metrics' => [
                                 'type' => 'endurance',
                                 'data' => [
@@ -30,10 +28,9 @@ class FlexibilityAndYoga extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Downward Dog Stretch',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['hamstrings', 'calves', 'shoulders', 'back', 'spine'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -44,10 +41,9 @@ class FlexibilityAndYoga extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Child Pose',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['lower_back', 'hips', 'shoulders', 'spine', 'recovery'],
                             'metrics' => [
                                 'type' => 'endurance',
                                 'data' => [
@@ -55,18 +51,15 @@ class FlexibilityAndYoga extends AbstractPhysicalActivity
                                     'duration_unit' => 'minutes'
                                 ]
                             ]
-                        ]
-
+                        ],
                     ]
                 ],
 
                 'Tue' => [
-                    'target_muscles' => ['hips', 'hamstrings'],
                     'workouts' => [
-
                         [
                             'name' => 'Standing Forward Bend',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['hamstrings', 'calves', 'lower_back', 'spine'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -77,10 +70,9 @@ class FlexibilityAndYoga extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Low Lunge Stretch',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['hip_flexors', 'quads', 'glutes', 'hips', 'hamstrings'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -91,10 +83,9 @@ class FlexibilityAndYoga extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Butterfly Pose',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['hips', 'adductors', 'groin', 'lower_back'],
                             'metrics' => [
                                 'type' => 'endurance',
                                 'data' => [
@@ -102,18 +93,15 @@ class FlexibilityAndYoga extends AbstractPhysicalActivity
                                     'duration_unit' => 'minutes'
                                 ]
                             ]
-                        ]
-
+                        ],
                     ]
                 ],
 
                 'Wed' => [
-                    'target_muscles' => ['spine', 'back'],
                     'workouts' => [
-
                         [
                             'name' => 'Cat Cow Stretch',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['spine', 'lower_back', 'upper_back', 'core'],
                             'metrics' => [
                                 'type' => 'endurance',
                                 'data' => [
@@ -122,10 +110,9 @@ class FlexibilityAndYoga extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Cobra Pose',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['spine', 'lower_back', 'chest', 'abs', 'shoulders'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -136,10 +123,9 @@ class FlexibilityAndYoga extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Seated Spinal Twist',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['spine', 'obliques', 'lower_back', 'hips'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -149,18 +135,15 @@ class FlexibilityAndYoga extends AbstractPhysicalActivity
                                     'rest' => 15
                                 ]
                             ]
-                        ]
-
+                        ],
                     ]
                 ],
 
                 'Thu' => [
-                    'target_muscles' => ['shoulders', 'neck'],
                     'workouts' => [
-
                         [
                             'name' => 'Neck Stretch',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['neck', 'traps', 'upper_back', 'shoulders'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -171,10 +154,9 @@ class FlexibilityAndYoga extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Thread The Needle Pose',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['shoulders', 'upper_back', 'spine', 'chest'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -185,10 +167,9 @@ class FlexibilityAndYoga extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Puppy Pose',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['shoulders', 'chest', 'upper_back', 'spine', 'lats'],
                             'metrics' => [
                                 'type' => 'endurance',
                                 'data' => [
@@ -196,18 +177,15 @@ class FlexibilityAndYoga extends AbstractPhysicalActivity
                                     'duration_unit' => 'minutes'
                                 ]
                             ]
-                        ]
-
+                        ],
                     ]
                 ],
 
                 'Fri' => [
-                    'target_muscles' => ['hips', 'glutes'],
                     'workouts' => [
-
                         [
                             'name' => 'Pigeon Pose',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['hips', 'glutes', 'hip_flexors', 'lower_back'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -218,10 +196,9 @@ class FlexibilityAndYoga extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Happy Baby Pose',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['hips', 'hamstrings', 'adductors', 'lower_back'],
                             'metrics' => [
                                 'type' => 'endurance',
                                 'data' => [
@@ -230,10 +207,9 @@ class FlexibilityAndYoga extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Bridge Pose',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['glutes', 'hamstrings', 'lower_back', 'chest', 'hip_flexors'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -243,18 +219,15 @@ class FlexibilityAndYoga extends AbstractPhysicalActivity
                                     'rest' => 15
                                 ]
                             ]
-                        ]
-
+                        ],
                     ]
                 ],
 
                 'Sat' => [
-                    'target_muscles' => ['full_body'],
                     'workouts' => [
-
                         [
                             'name' => 'Sun Salutation Flow',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['full_body', 'mobility', 'flexibility', 'shoulders', 'hamstrings', 'core'],
                             'metrics' => [
                                 'type' => 'endurance',
                                 'data' => [
@@ -263,10 +236,9 @@ class FlexibilityAndYoga extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Triangle Pose',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['hamstrings', 'hips', 'obliques', 'spine', 'shoulders', 'balance'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -277,10 +249,9 @@ class FlexibilityAndYoga extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Warrior II Pose',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['quads', 'glutes', 'hips', 'shoulders', 'core', 'balance'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -290,17 +261,15 @@ class FlexibilityAndYoga extends AbstractPhysicalActivity
                                     'rest' => 15
                                 ]
                             ]
-                        ]
-
+                        ],
                     ]
                 ],
 
                 'Sun' => [
-                    'target_muscles' => [],
                     'workouts' => [
                         [
                             'name' => 'Yoga Nidra (Deep Relaxation)',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['recovery', 'relaxation', 'mindfulness', 'nervous_system'],
                             'metrics' => [
                                 'type' => 'endurance',
                                 'data' => [

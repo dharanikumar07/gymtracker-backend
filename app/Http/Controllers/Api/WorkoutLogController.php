@@ -104,6 +104,7 @@ class WorkoutLogController extends Controller
                 $type = $log['type'] ?? null;
                 $status = $log['status'] ?? 'completed';
                 $reason = $log['reason'] ?? null;
+                $metaData = $log['meta_data'] ?? [];
 
                 if (!$slotUuid) {
                     $maxOrder = PhysicalActivitySlot::where('plan_uuid', $plan->uuid)
@@ -121,6 +122,7 @@ class WorkoutLogController extends Controller
                             'metrics_type' => $metricsType,
                             'day' => $day,
                             'metrics_data' => $defaultMetricsData,
+                            'meta_data' => $metaData,
                         ]
                     );
 

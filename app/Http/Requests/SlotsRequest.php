@@ -22,7 +22,8 @@ class SlotsRequest extends FormRequest
             'slots.*.day' => 'required|string',
             'slots.*.metrics_type' => 'nullable|string',
             'slots.*.metrics_data' => 'nullable|array',
-            'slots.*.meta_data' => 'nullable|array',
+            'slots.*.meta_data' => 'required|array',
+            'slots.*.meta_data.target_muscles' => 'required_unless:slots.*.metrics_type,rest|array|min:1',
         ];
     }
 
@@ -39,6 +40,8 @@ class SlotsRequest extends FormRequest
             'slots.*.exercise_order.integer' => 'The exercise order must be an integer',
             'slots.*.day.required' => 'The day is required for each slot',
             'slots.*.day.string' => 'The day must be a string',
+            'slots.*.meta_data.target_muscles.required_unless' => 'At least one targeted muscle is required for each exercise.',
+            'slots.*.meta_data.target_muscles.min' => 'At least one targeted muscle is required for each exercise.',
         ];
     }
 }

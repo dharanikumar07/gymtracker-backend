@@ -12,16 +12,14 @@ class CardioTraining extends AbstractPhysicalActivity
             'metrics_types' => $this->getAvailableMetricTypes(),
 
             'physical_activity_type' => 'cardio_training',
-            
+
             'cardio_training' => [
 
                 'Mon' => [
-                    'target_muscles' => ['full_body'],
                     'workouts' => [
-
                         [
                             'name' => 'Jump Rope',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['cardio', 'calves', 'quads', 'hamstrings', 'shoulders', 'core'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -32,10 +30,9 @@ class CardioTraining extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'High Knees',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['cardio', 'hip_flexors', 'quads', 'calves', 'core'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -46,10 +43,9 @@ class CardioTraining extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Jumping Jacks',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['cardio', 'full_body', 'shoulders', 'calves', 'glutes', 'core'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -59,18 +55,15 @@ class CardioTraining extends AbstractPhysicalActivity
                                     'rest' => 30
                                 ]
                             ]
-                        ]
-
+                        ],
                     ]
                 ],
 
                 'Tue' => [
-                    'target_muscles' => ['legs', 'cardiovascular_system'],
                     'workouts' => [
-
                         [
                             'name' => 'Running',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['cardio', 'quads', 'hamstrings', 'glutes', 'calves', 'core'],
                             'metrics' => [
                                 'type' => 'endurance',
                                 'data' => [
@@ -79,10 +72,9 @@ class CardioTraining extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Mountain Climbers',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['cardio', 'core', 'abs', 'shoulders', 'chest', 'quads'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -93,10 +85,9 @@ class CardioTraining extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Burpees',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['cardio', 'full_body', 'chest', 'shoulders', 'triceps', 'core', 'quads', 'glutes'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -106,18 +97,15 @@ class CardioTraining extends AbstractPhysicalActivity
                                     'rest' => 30
                                 ]
                             ]
-                        ]
-
+                        ],
                     ]
                 ],
 
                 'Wed' => [
-                    'target_muscles' => ['legs'],
                     'workouts' => [
-
                         [
                             'name' => 'Cycling',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['cardio', 'quads', 'hamstrings', 'glutes', 'calves'],
                             'metrics' => [
                                 'type' => 'endurance',
                                 'data' => [
@@ -126,10 +114,9 @@ class CardioTraining extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Jump Squats',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['cardio', 'quads', 'glutes', 'hamstrings', 'calves', 'core'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -140,10 +127,9 @@ class CardioTraining extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Butt Kicks',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['cardio', 'hamstrings', 'quads', 'calves', 'glutes'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -153,35 +139,15 @@ class CardioTraining extends AbstractPhysicalActivity
                                     'rest' => 30
                                 ]
                             ]
-                        ]
-
+                        ],
                     ]
                 ],
 
                 'Thu' => [
-                    'target_muscles' => [],
                     'workouts' => [
                         [
                             'name' => 'Active Recovery Walk',
-                            'sample_video_link' => '',
-                            'metrics' => [
-                                'type' => 'endurance',
-                                'data' => [
-                                    'duration' => 20,
-                                    'duration_unit' => 'minutes'
-                                ]
-                            ]
-                        ]
-                    ]
-                ],
-
-                'Fri' => [
-                    'target_muscles' => ['full_body'],
-                    'workouts' => [
-
-                        [
-                            'name' => 'Rowing Machine',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['active_recovery', 'cardio', 'legs', 'calves', 'glutes'],
                             'metrics' => [
                                 'type' => 'endurance',
                                 'data' => [
@@ -190,10 +156,25 @@ class CardioTraining extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
+                    ]
+                ],
 
+                'Fri' => [
+                    'workouts' => [
+                        [
+                            'name' => 'Rowing Machine',
+                            'target_muscles' => ['cardio', 'back', 'lats', 'shoulders', 'arms', 'quads', 'glutes', 'core'],
+                            'metrics' => [
+                                'type' => 'endurance',
+                                'data' => [
+                                    'duration' => 20,
+                                    'duration_unit' => 'minutes'
+                                ]
+                            ]
+                        ],
                         [
                             'name' => 'Jump Rope',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['cardio', 'calves', 'quads', 'hamstrings', 'shoulders', 'core'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -204,10 +185,9 @@ class CardioTraining extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Skater Jumps',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['cardio', 'glutes', 'quads', 'hamstrings', 'calves', 'core', 'balance'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -217,18 +197,15 @@ class CardioTraining extends AbstractPhysicalActivity
                                     'rest' => 30
                                 ]
                             ]
-                        ]
-
+                        ],
                     ]
                 ],
 
                 'Sat' => [
-                    'target_muscles' => ['legs', 'cardio'],
                     'workouts' => [
-
                         [
                             'name' => 'Stair Climbing',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['cardio', 'quads', 'glutes', 'hamstrings', 'calves'],
                             'metrics' => [
                                 'type' => 'endurance',
                                 'data' => [
@@ -237,10 +214,9 @@ class CardioTraining extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Sprint Intervals',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['cardio', 'quads', 'hamstrings', 'glutes', 'calves', 'core'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -250,17 +226,15 @@ class CardioTraining extends AbstractPhysicalActivity
                                     'rest' => 40
                                 ]
                             ]
-                        ]
-
+                        ],
                     ]
                 ],
 
                 'Sun' => [
-                    'target_muscles' => [],
                     'workouts' => [
                         [
                             'name' => 'Rest Day',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['recovery'],
                             'metrics' => [
                                 'type' => 'rest',
                                 'data' => []

@@ -14,13 +14,12 @@ class Calisthenics extends AbstractPhysicalActivity
             'physical_activity_type' => 'calisthenics',
 
             'calisthenics' => [
-                'Mon' => [
-                    'target_muscles' => ['chest', 'shoulders', 'triceps'],
-                    'workouts' => [
 
+                'Mon' => [
+                    'workouts' => [
                         [
                             'name' => 'Push Ups',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['chest', 'shoulders', 'triceps', 'core'],
                             'metrics' => [
                                 'type' => 'strength',
                                 'data' => [
@@ -30,10 +29,9 @@ class Calisthenics extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Dips',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['triceps', 'chest', 'shoulders'],
                             'metrics' => [
                                 'type' => 'strength',
                                 'data' => [
@@ -43,10 +41,9 @@ class Calisthenics extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Pike Push Ups',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['shoulders', 'triceps', 'upper_chest', 'core'],
                             'metrics' => [
                                 'type' => 'strength',
                                 'data' => [
@@ -55,18 +52,15 @@ class Calisthenics extends AbstractPhysicalActivity
                                     'rest' => 60
                                 ]
                             ]
-                        ]
-
+                        ],
                     ]
                 ],
 
                 'Tue' => [
-                    'target_muscles' => ['back', 'biceps'],
                     'workouts' => [
-
                         [
                             'name' => 'Pull Ups',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['lats', 'back', 'biceps', 'forearms'],
                             'metrics' => [
                                 'type' => 'strength',
                                 'data' => [
@@ -76,10 +70,9 @@ class Calisthenics extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Chin Ups',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['biceps', 'lats', 'back', 'forearms'],
                             'metrics' => [
                                 'type' => 'strength',
                                 'data' => [
@@ -89,10 +82,9 @@ class Calisthenics extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Inverted Row',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['back', 'lats', 'rear_delts', 'biceps', 'core'],
                             'metrics' => [
                                 'type' => 'strength',
                                 'data' => [
@@ -101,18 +93,15 @@ class Calisthenics extends AbstractPhysicalActivity
                                     'rest' => 60
                                 ]
                             ]
-                        ]
-
+                        ],
                     ]
                 ],
 
                 'Wed' => [
-                    'target_muscles' => ['legs', 'glutes'],
                     'workouts' => [
-
                         [
                             'name' => 'Bodyweight Squats',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['quads', 'glutes', 'hamstrings', 'core'],
                             'metrics' => [
                                 'type' => 'strength',
                                 'data' => [
@@ -122,10 +111,9 @@ class Calisthenics extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Walking Lunges',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['quads', 'glutes', 'hamstrings', 'calves', 'core'],
                             'metrics' => [
                                 'type' => 'strength',
                                 'data' => [
@@ -135,10 +123,9 @@ class Calisthenics extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Glute Bridge',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['glutes', 'hamstrings', 'core', 'lower_back'],
                             'metrics' => [
                                 'type' => 'strength',
                                 'data' => [
@@ -147,18 +134,15 @@ class Calisthenics extends AbstractPhysicalActivity
                                     'rest' => 60
                                 ]
                             ]
-                        ]
-
+                        ],
                     ]
                 ],
 
                 'Thu' => [
-                    'target_muscles' => ['core'],
                     'workouts' => [
-
                         [
                             'name' => 'Plank',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['core', 'abs', 'shoulders', 'lower_back'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -169,10 +153,9 @@ class Calisthenics extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Hanging Knee Raises',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['abs', 'core', 'hip_flexors', 'forearms'],
                             'metrics' => [
                                 'type' => 'strength',
                                 'data' => [
@@ -182,10 +165,9 @@ class Calisthenics extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Mountain Climbers',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['core', 'abs', 'shoulders', 'quads', 'cardio'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -195,18 +177,15 @@ class Calisthenics extends AbstractPhysicalActivity
                                     'rest' => 30
                                 ]
                             ]
-                        ]
-
+                        ],
                     ]
                 ],
 
                 'Fri' => [
-                    'target_muscles' => ['chest', 'shoulders', 'triceps'],
                     'workouts' => [
-
                         [
                             'name' => 'Decline Push Ups',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['upper_chest', 'shoulders', 'triceps', 'core'],
                             'metrics' => [
                                 'type' => 'strength',
                                 'data' => [
@@ -216,10 +195,9 @@ class Calisthenics extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Bench Dips',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['triceps', 'chest', 'shoulders'],
                             'metrics' => [
                                 'type' => 'strength',
                                 'data' => [
@@ -229,10 +207,9 @@ class Calisthenics extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Handstand Hold',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['shoulders', 'triceps', 'core', 'upper_back', 'forearms'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -242,18 +219,15 @@ class Calisthenics extends AbstractPhysicalActivity
                                     'rest' => 45
                                 ]
                             ]
-                        ]
-
+                        ],
                     ]
                 ],
 
                 'Sat' => [
-                    'target_muscles' => ['back', 'biceps'],
                     'workouts' => [
-
                         [
                             'name' => 'Wide Grip Pull Ups',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['lats', 'back', 'biceps', 'forearms'],
                             'metrics' => [
                                 'type' => 'strength',
                                 'data' => [
@@ -263,10 +237,9 @@ class Calisthenics extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Australian Pull Ups',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['back', 'lats', 'rear_delts', 'biceps', 'core'],
                             'metrics' => [
                                 'type' => 'strength',
                                 'data' => [
@@ -276,10 +249,9 @@ class Calisthenics extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Chin Up Hold',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['biceps', 'lats', 'back', 'forearms', 'core'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -289,17 +261,15 @@ class Calisthenics extends AbstractPhysicalActivity
                                     'rest' => 45
                                 ]
                             ]
-                        ]
-
+                        ],
                     ]
                 ],
 
                 'Sun' => [
-                    'target_muscles' => [],
                     'workouts' => [
                         [
                             'name' => 'Rest Day',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['recovery'],
                             'metrics' => [
                                 'type' => 'rest',
                                 'data' => []
