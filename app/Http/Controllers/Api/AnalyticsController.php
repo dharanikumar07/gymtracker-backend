@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Services\AnalyticsOverviewService;
 use App\Services\AnalyticsWorkoutService;
+use App\Services\AnalyticsExpenseService;
 use App\Http\Helpers\Helper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
@@ -14,13 +15,16 @@ class AnalyticsController extends Controller
 {
     protected $overviewService;
     protected $workoutService;
+    protected $expenseService;
 
     public function __construct(
         AnalyticsOverviewService $overviewService,
-        AnalyticsWorkoutService $workoutService
+        AnalyticsWorkoutService $workoutService,
+        AnalyticsExpenseService $expenseService
     ) {
         $this->overviewService = $overviewService;
         $this->workoutService = $workoutService;
+        $this->expenseService = $expenseService;
     }
 
     /**
@@ -182,6 +186,131 @@ class AnalyticsController extends Controller
 
         } catch (\Exception $e) {
             Helper::logError('Unable to fetch progressive overload data', [__CLASS__, __FUNCTION__], $e, $request->toArray());
+            return Response::json([
+                'message' => 'Server Error Occurred'
+            ], HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * EXPENSE ANALYTICS ENDPOINTS
+     */
+
+    public function getAvailableCategories(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $categories = $this->expenseService->getAvailableCategories($user);
+
+            return Response::json([
+                'data' => $categories
+            ], HttpFoundationResponse::HTTP_OK);
+
+        } catch (\Exception $e) {
+            Helper::logError('Unable to fetch available categories', [__CLASS__, __FUNCTION__], $e, $request->toArray());
+            return Response::json([
+                'message' => 'Server Error Occurred'
+            ], HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function expenseLog(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $params = [
+                'start_date' => $request->input('start_date'),
+                'end_date' => $request->input('end_date'),
+            ];
+
+            if (!$params['start_date']) {
+                return Response::json(['message' => 'start_date is required'], 400);
+            }
+
+            $logs = $this->expenseService->getExpenseLogs($user, $params);
+
+            return Response::json([
+                'data' => $logs
+            ], HttpFoundationResponse::HTTP_OK);
+
+        } catch (\Exception $e) {
+            Helper::logError('Unable to fetch expense logs analytics', [__CLASS__, __FUNCTION__], $e, $request->toArray());
+            return Response::json([
+                'message' => 'Server Error Occurred'
+            ], HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function expenseInsights(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $params = [
+                'start_date' => $request->input('start_date'),
+                'end_date' => $request->input('end_date'),
+            ];
+
+            if (!$params['start_date']) {
+                return Response::json(['message' => 'start_date is required'], 400);
+            }
+
+            $summary = $this->expenseService->getExpenseSummary($user, $params);
+
+            return Response::json([
+                'data' => [
+                    'summary' => $summary,
+                ]
+            ], HttpFoundationResponse::HTTP_OK);
+
+        } catch (\Exception $e) {
+            Helper::logError('Unable to fetch expense insights', [__CLASS__, __FUNCTION__], $e, $request->toArray());
+            return Response::json([
+                'message' => 'Server Error Occurred'
+            ], HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function expenseTrend(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $params = [
+                'period_type' => $request->input('period_type', 'month'),
+                'lookback' => $request->input('lookback', '4'),
+                'category_uuid' => $request->input('category_uuid'),
+            ];
+
+            $data = $this->expenseService->getExpenseTrend($user, $params);
+
+            return Response::json([
+                'data' => $data
+            ], HttpFoundationResponse::HTTP_OK);
+
+        } catch (\Exception $e) {
+            Helper::logError('Unable to fetch expense trend data', [__CLASS__, __FUNCTION__], $e, $request->toArray());
+            return Response::json([
+                'message' => 'Server Error Occurred'
+            ], HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function expenseDistribution(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $params = [
+                'period_type' => $request->input('period_type', 'month'),
+                'lookback' => $request->input('lookback', '4'),
+            ];
+
+            $data = $this->expenseService->getExpenseDistribution($user, $params);
+
+            return Response::json([
+                'data' => $data
+            ], HttpFoundationResponse::HTTP_OK);
+
+        } catch (\Exception $e) {
+            Helper::logError('Unable to fetch expense distribution data', [__CLASS__, __FUNCTION__], $e, $request->toArray());
             return Response::json([
                 'message' => 'Server Error Occurred'
             ], HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR);

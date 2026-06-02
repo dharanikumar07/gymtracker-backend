@@ -13,6 +13,10 @@ class ExpenseLog extends Model
 
     protected $guarded = [];
 
+    protected $casts = [
+        'expense_date' => 'date',
+    ];
+
     /**
      * Get the user that owns the log.
      */
