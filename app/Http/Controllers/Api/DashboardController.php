@@ -196,15 +196,15 @@ class DashboardController extends Controller
                 'icon' => 'utensils',
             ]);
 
-        $recentExpenses = ExpenseLog::where('user_uuid', $user->uuid)
+        $recentExpenses = ExpenseLog::with('category')->where('user_uuid', $user->uuid)
             ->orderBy('expense_date', 'desc')
             ->limit(2)
             ->get()
             ->map(fn($e) => [
                 'type' => 'expense',
-                'title' => $e->name,
+                'title' => $e->category->category_type ?? 'Expense',
                 'value' => '₹' . $e->amount,
-                'date' => $e->expense_date,
+                'date' => Carbon::parse($e->expense_date),
                 'icon' => 'wallet',
             ]);
 

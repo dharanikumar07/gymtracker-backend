@@ -169,7 +169,7 @@ class AnalyticsWorkoutService
         
         $now = Carbon::now();
         $periods = [];
-        $count = $this->getLookbackCount($lookback, $periodType);
+        $count = $this->getLookbackCount($user, $lookback, $periodType);
 
         for ($i = $count - 1; $i >= 0; $i--) {
             if ($periodType === 'month') {
@@ -180,13 +180,22 @@ class AnalyticsWorkoutService
                     'end' => $target->copy()->endOfMonth(),
                     'period' => $target->format('Y-m')
                 ];
-            } else {
+            } elseif ($periodType === 'week') {
                 $target = $now->copy()->subWeeks($i);
                 $periods[] = [
                     'label' => 'W' . $target->weekOfYear . ' ' . $target->format('y'),
                     'start' => $target->copy()->startOfWeek(),
                     'end' => $target->copy()->endOfWeek(),
                     'period' => $target->copy()->startOfWeek()->format('Y-m-d')
+                ];
+            } else { // day
+                $start = $now->copy()->subDays($i)->startOfDay();
+                $end = $start->copy()->endOfDay();
+                $periods[] = [
+                    'label' => $start->format('d M'),
+                    'start' => $start,
+                    'end' => $end,
+                    'period' => $start->toDateString()
                 ];
             }
         }
@@ -245,33 +254,33 @@ class AnalyticsWorkoutService
 
         $data = [];
         $now = Carbon::now();
+        $count = $this->getLookbackCount($user, $lookback, $periodType);
 
-        if ($periodType === 'month') {
-            $monthsToFetch = $this->getLookbackCount($lookback, 'month');
-            for ($i = $monthsToFetch - 1; $i >= 0; $i--) {
-                $targetMonth = $now->copy()->subMonths($i);
-                $start = $targetMonth->copy()->startOfMonth();
-                $end = $targetMonth->copy()->endOfMonth();
-                
-                $data[] = [
-                    'label' => $targetMonth->format('M Y'),
-                    'volume' => $this->getVolumeForExerciseInPeriod($user, $exercise->exercise_name, $start, $end),
-                    'period' => $targetMonth->format('Y-m')
-                ];
+        for ($i = $count - 1; $i >= 0; $i--) {
+            if ($periodType === 'month') {
+                $target = $now->copy()->subMonths($i);
+                $start = $target->copy()->startOfMonth();
+                $end = $target->copy()->endOfMonth();
+                $label = $target->format('M Y');
+                $period = $target->format('Y-m');
+            } elseif ($periodType === 'week') {
+                $target = $now->copy()->subWeeks($i);
+                $start = $target->copy()->startOfWeek();
+                $end = $target->copy()->endOfWeek();
+                $label = 'W' . $target->weekOfYear . ' ' . $target->format('y');
+                $period = $start->format('Y-m-d');
+            } else { // day
+                $start = $now->copy()->subDays($i)->startOfDay();
+                $end = $start->copy()->endOfDay();
+                $label = $start->format('d M');
+                $period = $start->toDateString();
             }
-        } else {
-            $weeksToFetch = $this->getLookbackCount($lookback, 'week');
-            for ($i = $weeksToFetch - 1; $i >= 0; $i--) {
-                $targetWeek = $now->copy()->subWeeks($i);
-                $start = $targetWeek->copy()->startOfWeek();
-                $end = $targetWeek->copy()->endOfWeek();
-                
-                $data[] = [
-                    'label' => 'W' . $targetWeek->weekOfYear . ' ' . $targetWeek->format('y'),
-                    'volume' => $this->getVolumeForExerciseInPeriod($user, $exercise->exercise_name, $start, $end),
-                    'period' => $start->format('Y-m-d')
-                ];
-            }
+            
+            $data[] = [
+                'label' => $label,
+                'volume' => $this->getVolumeForExerciseInPeriod($user, $exercise->exercise_name, $start, $end),
+                'period' => $period
+            ];
         }
 
         return $data;
@@ -302,11 +311,23 @@ class AnalyticsWorkoutService
         return $volume;
     }
 
-    private function getLookbackCount($lookback, $type)
+    private function getLookbackCount($user, $lookback, $type)
     {
+        if ($lookback === 'all_time') {
+            $userJoined = Carbon::parse($user->created_at);
+            $now = Carbon::now();
+
+            if ($type === 'month') {
+                return $userJoined->diffInMonths($now) + 1;
+            } elseif ($type === 'week') {
+                return $userJoined->diffInWeeks($now) + 1;
+            } else { // day
+                return $userJoined->diffInDays($now) + 1;
+            }
+        }
+
         if (is_numeric($lookback)) return (int)$lookback;
         if ($lookback === 'this_year') return $type === 'month' ? Carbon::now()->month : Carbon::now()->weekOfYear;
-        if ($lookback === 'all_time') return $type === 'month' ? 24 : 52;
         return 4;
     }
 
