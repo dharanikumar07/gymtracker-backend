@@ -80,24 +80,24 @@ class WorkoutsController extends Controller
 
             foreach ($weeklySplit as $dayName => $dayData) {
                 $dayLower = strtolower(explode('-', $dayName)[0]);
-                $targetMuscles = $dayData['target_muscles'] ?? [];
+                $dayTargetMuscles = $dayData['target_muscles'] ?? [];
                 $workouts = $dayData['workouts'] ?? [];
 
                 foreach ($workouts as $workout) {
                     $slotUuid = $workout['uuid'] ?? null;
+                    $workoutTargetMuscles = $workout['target_muscles'] ?? ($workout['meta_data']['target_muscles'] ?? $dayTargetMuscles);
 
                     if ($slotUuid) {
                         PhysicalActivitySlot::where('uuid', $slotUuid)
                             ->where('user_uuid', $user->uuid)
                             ->update([
-                                'exercise_name' => $workout['name'] ?? '',
+                                'exercise_name' => $workout['name'] ?? ($workout['exercise_name'] ?? ''),
                                 'exercise_order' => $workout['exercise_order'] ?? $exerciseOrder,
                                 'day' => $dayLower,
                                 'metrics_type' => $workout['metrics']['type'] ?? null,
                                 'metrics_data' => $workout['metrics']['data'] ?? null,
                                 'meta_data' => [
-                                    'sample_video_link' => $workout['sample_video_link'] ?? null,
-                                    'target_muscles' => $targetMuscles,
+                                    'target_muscles' => $workoutTargetMuscles,
                                 ],
                             ]);
                     } else {
@@ -110,8 +110,7 @@ class WorkoutsController extends Controller
                             'metrics_type' => $workout['metrics']['type'] ?? null,
                             'metrics_data' => $workout['metrics']['data'] ?? null,
                             'meta_data' => [
-                                'sample_video_link' => $workout['sample_video_link'] ?? null,
-                                'target_muscles' => $targetMuscles,
+                                'target_muscles' => $workoutTargetMuscles,
                             ],
                         ]);
                     }
@@ -229,11 +228,13 @@ class WorkoutsController extends Controller
                 $exerciseOrder = 1;
 
                 foreach ($dayWorkouts as $day => $dayData) {
-                    $targetMuscles = $dayData['target_muscles'] ?? [];
+                    $dayTargetMuscles = $dayData['target_muscles'] ?? [];
                     $workouts = $dayData['workouts'] ?? [];
 
                     foreach ($workouts as $exercise) {
                         $metrics = $exercise['metrics'] ?? [];
+                        $workoutTargetMuscles = $exercise['target_muscles'] ?? $dayTargetMuscles;
+
                         $slotsToSave[] = [
                             'plan_uuid' => $planUuid,
                             'exercise_name' => $exercise['name'] ?? 'Rest',
@@ -242,7 +243,7 @@ class WorkoutsController extends Controller
                             'metrics_type' => $metrics['type'] ?? 'strength',
                             'metrics_data' => $metrics['data'] ?? [],
                             'meta_data' => [
-                                'target_muscles' => $targetMuscles,
+                                'target_muscles' => $workoutTargetMuscles,
                             ],
                         ];
                     }

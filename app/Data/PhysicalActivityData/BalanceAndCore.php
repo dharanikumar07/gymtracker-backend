@@ -16,12 +16,10 @@ class BalanceAndCore extends AbstractPhysicalActivity
             'balance_core' => [
 
                 'Mon' => [
-                    'target_muscles' => ['core', 'abs'],
                     'workouts' => [
-
                         [
                             'name' => 'Plank',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['core', 'abs', 'shoulders', 'lower_back'],
                             'metrics' => [
                                 'type' => 'endurance',
                                 'data' => [
@@ -30,10 +28,9 @@ class BalanceAndCore extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Dead Bug',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['core', 'abs', 'hip_flexors', 'lower_back'],
                             'metrics' => [
                                 'type' => 'strength',
                                 'data' => [
@@ -43,10 +40,9 @@ class BalanceAndCore extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Bird Dog',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['core', 'lower_back', 'glutes', 'shoulders'],
                             'metrics' => [
                                 'type' => 'strength',
                                 'data' => [
@@ -55,18 +51,15 @@ class BalanceAndCore extends AbstractPhysicalActivity
                                     'rest' => 30
                                 ]
                             ]
-                        ]
-
+                        ],
                     ]
                 ],
 
                 'Tue' => [
-                    'target_muscles' => ['balance', 'legs', 'core'],
                     'workouts' => [
-
                         [
                             'name' => 'Single Leg Balance',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['balance', 'stability', 'ankles', 'calves', 'core'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -77,10 +70,9 @@ class BalanceAndCore extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Single Leg Deadlift (Bodyweight)',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['hamstrings', 'glutes', 'core', 'lower_back', 'balance'],
                             'metrics' => [
                                 'type' => 'strength',
                                 'data' => [
@@ -90,10 +82,9 @@ class BalanceAndCore extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Heel To Toe Walk',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['balance', 'stability', 'ankles', 'calves', 'core'],
                             'metrics' => [
                                 'type' => 'endurance',
                                 'data' => [
@@ -101,18 +92,15 @@ class BalanceAndCore extends AbstractPhysicalActivity
                                     'duration_unit' => 'minutes'
                                 ]
                             ]
-                        ]
-
+                        ],
                     ]
                 ],
 
                 'Wed' => [
-                    'target_muscles' => ['obliques', 'core'],
                     'workouts' => [
-
                         [
                             'name' => 'Russian Twist',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['obliques', 'abs', 'core', 'hip_flexors'],
                             'metrics' => [
                                 'type' => 'strength',
                                 'data' => [
@@ -122,10 +110,9 @@ class BalanceAndCore extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Side Plank',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['obliques', 'core', 'abs', 'shoulders'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -136,10 +123,9 @@ class BalanceAndCore extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Standing Oblique Crunch',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['obliques', 'abs', 'core', 'hip_flexors'],
                             'metrics' => [
                                 'type' => 'strength',
                                 'data' => [
@@ -148,18 +134,15 @@ class BalanceAndCore extends AbstractPhysicalActivity
                                     'rest' => 30
                                 ]
                             ]
-                        ]
-
+                        ],
                     ]
                 ],
 
                 'Thu' => [
-                    'target_muscles' => ['core'],
                     'workouts' => [
-
                         [
                             'name' => 'Glute Bridge',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['glutes', 'hamstrings', 'core', 'lower_back'],
                             'metrics' => [
                                 'type' => 'strength',
                                 'data' => [
@@ -169,10 +152,9 @@ class BalanceAndCore extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Pelvic Tilt',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['core', 'abs', 'lower_back', 'pelvic_floor'],
                             'metrics' => [
                                 'type' => 'strength',
                                 'data' => [
@@ -181,18 +163,15 @@ class BalanceAndCore extends AbstractPhysicalActivity
                                     'rest' => 30
                                 ]
                             ]
-                        ]
-
+                        ],
                     ]
                 ],
 
                 'Fri' => [
-                    'target_muscles' => ['core', 'abs'],
                     'workouts' => [
-
                         [
                             'name' => 'Plank Shoulder Tap',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['core', 'abs', 'shoulders', 'chest', 'triceps'],
                             'metrics' => [
                                 'type' => 'strength',
                                 'data' => [
@@ -202,10 +181,9 @@ class BalanceAndCore extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Side Plank Hip Dip',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['obliques', 'core', 'abs', 'shoulders', 'glutes'],
                             'metrics' => [
                                 'type' => 'strength',
                                 'data' => [
@@ -215,10 +193,9 @@ class BalanceAndCore extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Hollow Body Hold',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['abs', 'core', 'hip_flexors', 'quads'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -228,18 +205,15 @@ class BalanceAndCore extends AbstractPhysicalActivity
                                     'rest' => 20
                                 ]
                             ]
-                        ]
-
+                        ],
                     ]
                 ],
 
                 'Sat' => [
-                    'target_muscles' => ['functional_core', 'balance'],
                     'workouts' => [
-
                         [
                             'name' => 'Farmer Carry',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['grip', 'forearms', 'traps', 'core', 'shoulders', 'legs'],
                             'metrics' => [
                                 'type' => 'endurance',
                                 'data' => [
@@ -248,10 +222,9 @@ class BalanceAndCore extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Stability Ball Plank',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['core', 'abs', 'shoulders', 'stability', 'lower_back'],
                             'metrics' => [
                                 'type' => 'timed_sets',
                                 'data' => [
@@ -262,10 +235,9 @@ class BalanceAndCore extends AbstractPhysicalActivity
                                 ]
                             ]
                         ],
-
                         [
                             'name' => 'Standing Knee Raise',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['abs', 'core', 'hip_flexors', 'balance'],
                             'metrics' => [
                                 'type' => 'strength',
                                 'data' => [
@@ -274,17 +246,15 @@ class BalanceAndCore extends AbstractPhysicalActivity
                                     'rest' => 30
                                 ]
                             ]
-                        ]
-
+                        ],
                     ]
                 ],
 
                 'Sun' => [
-                    'target_muscles' => [],
                     'workouts' => [
                         [
                             'name' => 'Rest Day',
-                            'sample_video_link' => '',
+                            'target_muscles' => ['recovery'],
                             'metrics' => [
                                 'type' => 'rest',
                                 'data' => []

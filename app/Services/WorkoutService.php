@@ -13,6 +13,8 @@ class WorkoutService
     {
         $savedSlots = [];
         foreach ($slots as $slotData) {
+            $targetMuscles = $slotData['target_muscles'] ?? ($slotData['meta_data']['target_muscles'] ?? []);
+
             $slot = PhysicalActivitySlot::updateOrCreate(
                 [
                     'uuid' => $slotData['uuid'] ?? null,
@@ -25,7 +27,9 @@ class WorkoutService
                     'day' => $slotData['day'],
                     'metrics_type' => $slotData['metrics_type'] ?? null,
                     'metrics_data' => $slotData['metrics_data'] ?? [],
-                    'meta_data' => $slotData['meta_data'] ?? [],
+                    'meta_data' => [
+                        'target_muscles' => $targetMuscles,
+                    ],
                 ]
             );
 

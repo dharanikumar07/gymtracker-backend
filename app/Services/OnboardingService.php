@@ -36,10 +36,9 @@ class OnboardingService
             $scheduleData = $physicalActivityData[$scheduleKey] ?? [];
 
             $exerciseOrder = 1;
-
+            
             foreach ($scheduleData as $dayName => $dayData) {
                 $dayLower = strtolower($dayName);
-                $targetMuscles = $dayData['target_muscles'] ?? [];
                 $workouts = $dayData['workouts'] ?? [];
 
                 foreach ($workouts as $workout) {
@@ -52,8 +51,7 @@ class OnboardingService
                         'metrics_type' => $workout['metrics']['type'] ?? null,
                         'metrics_data' => $workout['metrics']['data'] ?? null,
                         'meta_data' => [
-                            'sample_video_link' => $workout['sample_video_link'] ?? null,
-                            'target_muscles' => $targetMuscles,
+                            'target_muscles' => $workout['target_muscles'] ?? [],
                         ],
                     ]);
 

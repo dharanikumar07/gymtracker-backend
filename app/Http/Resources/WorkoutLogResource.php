@@ -20,6 +20,7 @@ class WorkoutLogResource extends JsonResource
             'status' => $this->status,
             'type' => $this->type,
             'reason' => $this->reason,
+            'meta_data' => $this->slot?->meta_data ?? [],
             'created_at' => $this->created_at,
         ];
     }
