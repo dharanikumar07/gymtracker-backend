@@ -48,6 +48,9 @@ Route::prefix('v1')->group(function () {
         Route::patch('/plans/status', [PlanController::class, 'updatePlanStatus']);
         Route::delete('/plans/{uuid}', [PlanController::class, 'deletePlan']);
 
+        // Settings Routes
+        require base_path('routes/settings.php');
+
         // Analytics Routes
         require base_path('routes/analytics.php');
 
