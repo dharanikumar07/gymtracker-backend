@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\SettingsManager;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\UpdateProfileRequest;
 use App\Http\Helpers\Helper;
@@ -75,6 +76,82 @@ class SettingsController extends Controller
 
             Helper::logError(
                 'Error occurred in updateProfile',
+                [__CLASS__, __FUNCTION__],
+                $e,
+                $request->toArray()
+            );
+
+            return Response::json([
+                'message' => 'Server Error Occurred'
+            ], HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Get settings based on type.
+     */
+    public function getSettings(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            $type = $request->input('type', 'notification');
+            
+            $manager = new SettingsManager($type, $user->uuid);
+            $settings = $manager->get()->getSettings();
+
+            // If settings are empty, provide defaults through mergeWithDefault
+            if (empty($settings)) {
+                $settings = $manager->mergeWithDefault([]);
+            }
+
+            return Response::json([
+                'data' => $settings,
+                'message' => 'Settings retrieved successfully'
+            ], HttpFoundationResponse::HTTP_OK);
+
+        } catch (\Exception $e) {
+            Helper::logError(
+                'Error occurred in getSettings',
+                [__CLASS__, __FUNCTION__],
+                $e,
+                []
+            );
+
+            return Response::json([
+                'message' => 'Server Error Occurred'
+            ], HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Save settings based on type.
+     */
+    public function saveSettings(Request $request)
+    {
+        DB::beginTransaction();
+
+        try {
+            $user = Auth::user();
+            
+            $type = $request->input('type', 'notification');
+            $manager = new SettingsManager($type, $user->uuid);
+            
+            // Save settings using the manager (handles mergeWithDefault)
+            $manager->save($request->all());
+
+            DB::commit();
+
+            return Response::json([
+                'status' => 'success',
+                'message' => 'Settings updated successfully',
+                'data' => $manager->getSettings()
+            ], HttpFoundationResponse::HTTP_OK);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            Helper::logError(
+                'Error occurred in saveSettings',
                 [__CLASS__, __FUNCTION__],
                 $e,
                 $request->toArray()
