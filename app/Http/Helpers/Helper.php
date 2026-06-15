@@ -52,23 +52,4 @@ class Helper
         return str_replace('_', ' ', $value);
     }
 
-    public static function getAvailableDietWeightedUnits()
-    {
-        return [
-            ['value' => 'g', 'label' => 'Grams'],
-            ['value' => 'kg', 'label' => 'Kilograms'],
-            ['value' => 'lbs', 'label' => 'Pounds'],
-            ['value' => 'oz', 'label' => 'Ounces'],
-            ['value' => 'ml', 'label' => 'Milliliters'],
-            ['value' => 'l', 'label' => 'Liters'],
-            ['value' => 'cup', 'label' => 'Cups'],
-            ['value' => 'pcs', 'label' => 'Pieces'],
-            ['value' => 'tbsp', 'label' => 'Tablespoons'],
-            ['value' => 'tsp', 'label' => 'Teaspoons'],
-            ['value' => 'slice', 'label' => 'Slices'],
-            ['value' => 'bowl', 'label' => 'Bowls'],
-            ['value' => 'plate', 'label' => 'Plates'],
-            ['value' => 'quantity', 'label' => 'Quantity'],
-        ];
-    }
 }

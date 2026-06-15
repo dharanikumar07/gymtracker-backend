@@ -5,9 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\PhysicalActivityTracker;
-use App\Models\DietLog;
 use App\Models\ExpenseLog;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -22,12 +20,11 @@ class DashboardController extends Controller
             $today = Carbon::today();
             $startOfWeek = Carbon::now()->startOfWeek();
             $endOfWeek = Carbon::now()->endOfWeek();
-            $currentDay = strtolower($today->format('D'));
 
             $data = [
                 'user' => $this->getUserData($user),
                 'quick_actions' => $this->getQuickActions(),
-                'today' => $this->getTodayStats($user, $currentDay),
+                'today' => $this->getTodayStats($user),
                 'streak' => $this->getStreakData($user),
                 'quick_start' => $this->getQuickStartStatus($user),
                 'recent' => $this->getRecentActivity($user),
@@ -54,26 +51,20 @@ class DashboardController extends Controller
     {
         return [
             ['id' => 'workout', 'label' => 'Workout', 'icon' => 'dumbbell', 'route' => '/workout'],
-            ['id' => 'diet', 'label' => 'Diet', 'icon' => 'utensils', 'route' => '/diet'],
             ['id' => 'expense', 'label' => 'Expense', 'icon' => 'wallet', 'route' => '/expenses'],
             ['id' => 'plan', 'label' => 'Plan', 'icon' => 'clipboard-list', 'route' => '/plan'],
             ['id' => 'billing', 'label' => 'Billing', 'icon' => 'credit-card', 'route' => '/billing'],
         ];
     }
 
-    private function getTodayStats($user, $currentDay)
+    private function getTodayStats($user)
     {
         $fitnessPlan = Plan::where('user_uuid', $user->uuid)->where('type', 'physical_activity')->where('is_active', true)->first();
-        $dietPlan = Plan::where('user_uuid', $user->uuid)->where('type', 'diet')->where('is_active', true)->first();
         $budgetPlan = Plan::where('user_uuid', $user->uuid)->where('type', 'budget')->where('is_active', true)->first();
 
         $workoutCount = PhysicalActivityTracker::where('user_uuid', $user->uuid)
             ->whereDate('activity_date', Carbon::today())
             ->count();
-
-        $dietLogs = DietLog::where('user_uuid', $user->uuid)->where('day', $currentDay)->get();
-        $caloriesConsumed = (int) ($dietLogs->sum('calories') ?? 0);
-        $targetCalories = $dietPlan->meta_data['target_calories'] ?? 2000;
 
         $expenseToday = (int) (ExpenseLog::where('user_uuid', $user->uuid)
             ->whereDate('expense_date', Carbon::today())
@@ -87,12 +78,6 @@ class DashboardController extends Controller
                 'completed' => $workoutCount,
                 'target' => 1,
                 'percentage' => min($workoutCount * 100, 100),
-            ],
-            'diet' => [
-                'has_plan' => (bool) $dietPlan,
-                'consumed' => $caloriesConsumed,
-                'target' => $targetCalories,
-                'percentage' => $targetCalories > 0 ? min(($caloriesConsumed / $targetCalories) * 100, 100) : 0,
             ],
             'budget' => [
                 'has_plan' => (bool) $budgetPlan,
@@ -146,13 +131,11 @@ class DashboardController extends Controller
     {
         $hasProfile = !empty($user->name) && !empty($user->email);
         $hasFitnessPlan = Plan::where('user_uuid', $user->uuid)->where('type', 'physical_activity')->where('is_active', true)->exists();
-        $hasDietPlan = Plan::where('user_uuid', $user->uuid)->where('type', 'diet')->where('is_active', true)->exists();
         $hasBudgetPlan = Plan::where('user_uuid', $user->uuid)->where('type', 'budget')->where('is_active', true)->exists();
 
         $items = [
             ['id' => 'profile', 'title' => 'Complete your profile', 'completed' => $hasProfile],
             ['id' => 'fitness', 'title' => 'Set up workout plan', 'completed' => $hasFitnessPlan],
-            ['id' => 'diet', 'title' => 'Set diet goals', 'completed' => $hasDietPlan],
             ['id' => 'budget', 'title' => 'Add budget plan', 'completed' => $hasBudgetPlan],
         ];
 
@@ -170,8 +153,6 @@ class DashboardController extends Controller
 
     private function getRecentActivity($user)
     {
-        $activities = [];
-
         $recentWorkouts = PhysicalActivityTracker::where('user_uuid', $user->uuid)
             ->orderBy('activity_date', 'desc')
             ->limit(2)
@@ -182,18 +163,6 @@ class DashboardController extends Controller
                 'value' => ($w->metrics_data['weight'] ?? 0) . ' kg',
                 'date' => $w->activity_date,
                 'icon' => 'dumbbell',
-            ]);
-
-        $recentDiet = DietLog::where('user_uuid', $user->uuid)
-            ->orderBy('created_at', 'desc')
-            ->limit(2)
-            ->get()
-            ->map(fn($d) => [
-                'type' => 'diet',
-                'title' => $d->actual_food_name ?? 'Meal',
-                'value' => ($d->calories ?? 0) . ' kcal',
-                'date' => $d->created_at,
-                'icon' => 'utensils',
             ]);
 
         $recentExpenses = ExpenseLog::with('category')->where('user_uuid', $user->uuid)
@@ -209,7 +178,6 @@ class DashboardController extends Controller
             ]);
 
         $merged = $recentWorkouts
-            ->concat($recentDiet)
             ->concat($recentExpenses)
             ->sortByDesc('date')
             ->take(3)
