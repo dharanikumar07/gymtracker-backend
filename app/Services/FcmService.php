@@ -8,12 +8,10 @@ use Illuminate\Support\Facades\Log;
 class FcmService
 {
     protected string $projectId;
-    protected string $credentialsPath;
 
     public function __construct()
     {
         $this->projectId = config('services.fcm.project_id');
-        $this->credentialsPath = config('services.fcm.credentials_path');
     }
 
     /**
@@ -83,14 +81,12 @@ class FcmService
     protected function getAccessToken(): ?string
     {
         try {
-            $credentialsFile = base_path($this->credentialsPath);
+            $credentials = $this->loadCredentials();
 
-            if (!file_exists($credentialsFile)) {
-                Log::error("FCM: Service account file not found at {$credentialsFile}");
+            if (!$credentials) {
+                Log::error('FCM: No valid service account credentials found');
                 return null;
             }
-
-            $credentials = json_decode(file_get_contents($credentialsFile), true);
 
             // Build JWT for Google OAuth2
             $now = time();
@@ -125,6 +121,36 @@ class FcmService
             Log::error('FCM: Error obtaining access token', ['error' => $e->getMessage()]);
             return null;
         }
+    }
+
+    /**
+     * Load service account credentials from env JSON or file path.
+     */
+    protected function loadCredentials(): ?array
+    {
+        // Prefer inline JSON from env (for Render / cloud hosting)
+        $json = config('services.fcm.credentials_json');
+
+        if ($json) {
+            $credentials = json_decode($json, true);
+
+            if (json_last_error() === JSON_ERROR_NONE && !empty($credentials['client_email'])) {
+                return $credentials;
+            }
+
+            Log::error('FCM: FCM_CREDENTIALS_JSON env var is set but contains invalid JSON');
+            return null;
+        }
+
+        // Fall back to file path (local dev)
+        $credentialsFile = base_path(config('services.fcm.credentials_path'));
+
+        if (!file_exists($credentialsFile)) {
+            Log::error("FCM: Service account file not found at {$credentialsFile}");
+            return null;
+        }
+
+        return json_decode(file_get_contents($credentialsFile), true);
     }
 
     /**
