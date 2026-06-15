@@ -53,7 +53,6 @@ class DashboardController extends Controller
             ['id' => 'workout', 'label' => 'Workout', 'icon' => 'dumbbell', 'route' => '/workout'],
             ['id' => 'expense', 'label' => 'Expense', 'icon' => 'wallet', 'route' => '/expenses'],
             ['id' => 'plan', 'label' => 'Plan', 'icon' => 'clipboard-list', 'route' => '/plan'],
-            ['id' => 'billing', 'label' => 'Billing', 'icon' => 'credit-card', 'route' => '/billing'],
         ];
     }
 
