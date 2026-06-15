@@ -6,6 +6,7 @@ use App\Helpers\SettingsManager;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\UpdateProfileRequest;
 use App\Http\Helpers\Helper;
+use App\Services\NotificationScheduleSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -135,9 +136,15 @@ class SettingsController extends Controller
             
             $type = $request->input('type', 'notification');
             $manager = new SettingsManager($type, $user->uuid);
-            
+
             // Save settings using the manager (handles mergeWithDefault)
             $manager->save($request->all());
+
+            // Sync notification schedules when saving notification settings
+            if ($type === 'notification') {
+                $syncService = new NotificationScheduleSyncService();
+                $syncService->sync($user->uuid, $manager->getSettings());
+            }
 
             DB::commit();
 

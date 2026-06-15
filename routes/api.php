@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\SocialAuthController;
+use App\Http\Controllers\Api\CronController;
 use App\Http\Controllers\Api\ExpenseLogController;
 use App\Http\Controllers\Api\PhysicalActivityController;
 use App\Http\Controllers\Api\DietController;
@@ -11,6 +12,9 @@ use App\Http\Controllers\Api\PlanController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
+    // Cron endpoint — protected by X-Cron-Secret header
+    Route::post('/cron/notifications', [CronController::class, 'processNotifications']);
+
     // Public routes
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);

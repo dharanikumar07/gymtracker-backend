@@ -13,3 +13,8 @@ Schedule::command('app:generate-budget-cycles')
     ->twiceDaily()
     ->withoutOverlapping(60)
     ->onOneServer();
+
+Schedule::command('app:process-due-notifications')
+    ->everyMinute()
+    ->withoutOverlapping(60)
+    ->onOneServer();

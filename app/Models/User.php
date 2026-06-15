@@ -76,6 +76,21 @@ class User extends Authenticatable
         return $this->hasMany(ExpenseLog::class, 'user_uuid', 'uuid');
     }
 
+    public function notificationSchedules()
+    {
+        return $this->hasMany(NotificationSchedule::class, 'user_uuid', 'uuid');
+    }
+
+    public function deviceTokens()
+    {
+        return $this->hasMany(UserDeviceToken::class, 'user_uuid', 'uuid');
+    }
+
+    public function notificationLogs()
+    {
+        return $this->hasMany(NotificationLog::class, 'user_uuid', 'uuid');
+    }
+
     public function sendVeirfyEmailTOUser(): void
     {
         $frontendUrl = env('FRONTEND_URL', 'http://localhost:6500');
