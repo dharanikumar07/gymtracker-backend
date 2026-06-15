@@ -8,8 +8,8 @@ use App\Models\NotificationSchedule;
 use App\Models\PhysicalActivityTracker;
 use App\Models\UserDeviceToken;
 use App\Services\FcmService;
+use App\Traits\HasJobHistory;
 use Carbon\Carbon;
-use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -19,15 +19,12 @@ use Illuminate\Support\Facades\Log;
 
 class ProcessNotificationReminderJob implements ShouldQueue
 {
-    use Batchable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, HasJobHistory;
 
     public int $tries = 3;
 
     protected array $scheduleIds;
 
-    /**
-     * @param array $scheduleIds Array of notification_schedule IDs to process
-     */
     public function __construct(array $scheduleIds)
     {
         $this->scheduleIds = $scheduleIds;
@@ -35,43 +32,46 @@ class ProcessNotificationReminderJob implements ShouldQueue
 
     public function handle(FcmService $fcmService): void
     {
-        if ($this->batch()?->cancelled()) {
-            return;
-        }
+        $this->markHistoryRunning();
 
-        $today = Carbon::today()->toDateString();
-        $schedules = NotificationSchedule::whereIn('id', $this->scheduleIds)
-            ->where('is_active', true)
-            ->get();
+        try {
+            $today = Carbon::today()->toDateString();
+            $schedules = NotificationSchedule::whereIn('id', $this->scheduleIds)
+                ->where('is_active', true)
+                ->get();
 
-        foreach ($schedules as $schedule) {
-            try {
-                $this->processSchedule($schedule, $today, $fcmService);
-            } catch (\Exception $e) {
-                Log::error("Notification job failed for schedule {$schedule->uuid}", [
-                    'error' => $e->getMessage(),
-                ]);
+            foreach ($schedules as $schedule) {
+                try {
+                    $this->processSchedule($schedule, $today, $fcmService);
+                } catch (\Exception $e) {
+                    Log::error("Notification job failed for schedule {$schedule->uuid}", [
+                        'error' => $e->getMessage(),
+                    ]);
 
-                // Log failure
-                NotificationLog::updateOrCreate(
-                    [
-                        'user_uuid' => $schedule->user_uuid,
-                        'module' => $schedule->module,
-                        'notification_date' => $today,
-                        'notification_time' => $schedule->reminder_time,
-                    ],
-                    [
-                        'status' => 'failed',
-                        'failure_reason' => $e->getMessage(),
-                    ]
-                );
+                    NotificationLog::updateOrCreate(
+                        [
+                            'user_uuid' => $schedule->user_uuid,
+                            'module' => $schedule->module,
+                            'notification_date' => $today,
+                            'notification_time' => $schedule->reminder_time,
+                        ],
+                        [
+                            'status' => 'failed',
+                            'failure_reason' => $e->getMessage(),
+                        ]
+                    );
+                }
             }
+
+            $this->markHistoryCompleted();
+        } catch (\Exception $e) {
+            $this->markHistoryFailed($e->getMessage());
+            throw $e;
         }
     }
 
     protected function processSchedule(NotificationSchedule $schedule, string $today, FcmService $fcmService): void
     {
-        // 1. Check if notification already completed for this slot
         $existingLog = NotificationLog::where('user_uuid', $schedule->user_uuid)
             ->where('module', $schedule->module)
             ->where('notification_date', $today)
@@ -80,14 +80,12 @@ class ProcessNotificationReminderJob implements ShouldQueue
             ->first();
 
         if ($existingLog) {
-            return; // Already sent, skip
+            return;
         }
 
-        // 2. Check if user has already logged today for this module
         $hasLoggedToday = $this->hasUserLoggedToday($schedule->user_uuid, $schedule->module, $today);
 
         if ($hasLoggedToday) {
-            // User already logged — mark as skipped, no FCM needed
             NotificationLog::updateOrCreate(
                 [
                     'user_uuid' => $schedule->user_uuid,
@@ -102,7 +100,6 @@ class ProcessNotificationReminderJob implements ShouldQueue
             return;
         }
 
-        // 3. Fetch active device tokens
         $tokens = UserDeviceToken::where('user_uuid', $schedule->user_uuid)
             ->where('is_active', true)
             ->pluck('fcm_token')
@@ -124,14 +121,12 @@ class ProcessNotificationReminderJob implements ShouldQueue
             return;
         }
 
-        // 4. Send FCM notification
         $content = FcmService::getNotificationContent($schedule->module);
         $result = $fcmService->sendToTokens($tokens, $content['title'], $content['body'], [
             'module' => $schedule->module,
             'type' => 'reminder',
         ]);
 
-        // 5. Log the result
         if ($result['success'] > 0) {
             NotificationLog::updateOrCreate(
                 [
@@ -161,9 +156,6 @@ class ProcessNotificationReminderJob implements ShouldQueue
         }
     }
 
-    /**
-     * Check whether the user has already logged an entry today for the given module.
-     */
     protected function hasUserLoggedToday(string $userUuid, string $module, string $today): bool
     {
         return match ($module) {
