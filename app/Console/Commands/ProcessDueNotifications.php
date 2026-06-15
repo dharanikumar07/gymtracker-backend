@@ -6,8 +6,6 @@ use App\Jobs\ProcessNotificationReminderJob;
 use App\Models\NotificationSchedule;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Bus;
-use Illuminate\Support\Facades\Log;
 
 class ProcessDueNotifications extends Command
 {
@@ -19,7 +17,7 @@ class ProcessDueNotifications extends Command
     {
         $now = Carbon::now('Asia/Kolkata');
 
-        // 1-minute window: from the start of the current minute to end of current minute
+        // 5-minute lookback window to catch any missed schedules
         $windowStart = $now->copy()->subMinutes(5)->startOfMinute()->format('H:i:s');
         $windowEnd = $now->copy()->endOfMinute()->format('H:i:s');
 
@@ -36,18 +34,18 @@ class ProcessDueNotifications extends Command
 
         $this->info("Found {$dueSchedules->count()} due schedule(s). Dispatching jobs...");
 
-        // Chunk by 10 and create batch jobs
-        $jobs = [];
+        $jobCount = 0;
 
         foreach ($dueSchedules->chunk(10) as $chunk) {
-            $jobs[] = new ProcessNotificationReminderJob($chunk->pluck('id')->toArray());
+            $scheduleIds = $chunk->pluck('id')->toArray();
+
+            $job = new ProcessNotificationReminderJob($scheduleIds);
+            $job->withHistory(null, ['schedule_ids' => $scheduleIds]);
+            dispatch($job);
+
+            $jobCount++;
         }
 
-        Bus::batch($jobs)
-            ->name('Process Due Notification Reminders - ' . $now->toDateTimeString())
-            ->allowFailures()
-            ->dispatch();
-
-        $this->info('Dispatched ' . count($jobs) . ' job(s) in batch.');
+        $this->info("Dispatched {$jobCount} job(s).");
     }
 }

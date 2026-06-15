@@ -9,11 +9,18 @@ use App\Http\Controllers\Api\DietController;
 use App\Http\Controllers\Api\DietLogController;
 use App\Http\Controllers\Api\ExpenseController;
 use App\Http\Controllers\Api\PlanController;
+use App\Http\Middleware\VerifyCronSecret;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
-    // Cron endpoint — protected by X-Cron-Secret header
-    Route::post('/cron/notifications', [CronController::class, 'processNotifications']);
+
+    // Cron endpoints — protected by X-Cron-Secret header
+    Route::prefix('cron')->group(function () {
+        Route::get('/ping', [CronController::class, 'ping']); // No secret needed — just a wake-up call
+        Route::post('/min', [CronController::class, 'min'])->middleware(VerifyCronSecret::class);
+        Route::post('/twice-per-day', [CronController::class, 'twicePerDay'])->middleware(VerifyCronSecret::class);
+        Route::post('/process-jobs', [CronController::class, 'processJobs'])->middleware(VerifyCronSecret::class);
+    });
 
     // Public routes
     Route::post('/register', [AuthController::class, 'register']);
@@ -37,7 +44,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/expenses', [ExpenseLogController::class, 'index']);
         Route::post('/expenses/log', [ExpenseLogController::class, 'log']);
         Route::delete('/expenses/{uuid}', [ExpenseLogController::class, 'destroy']);
-        
+
         // Budget Plan Routes
         Route::get('/expenses/budget-plan', [ExpenseController::class, 'getBudgetPlans']);
         Route::post('/expenses/budget-plan', [ExpenseController::class, 'saveBudgetPlan']);
