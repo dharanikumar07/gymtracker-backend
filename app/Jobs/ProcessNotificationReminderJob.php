@@ -7,6 +7,7 @@ use App\Models\NotificationLog;
 use App\Models\NotificationSchedule;
 use App\Models\PhysicalActivityTracker;
 use App\Models\UserDeviceToken;
+use App\Http\Helpers\Helper;
 use App\Services\FcmService;
 use App\Traits\HasJobHistory;
 use Carbon\Carbon;
@@ -68,6 +69,14 @@ class ProcessNotificationReminderJob implements ShouldQueue
             $this->markHistoryFailed($e->getMessage());
             throw $e;
         }
+    }
+
+    public function failed(\Throwable $exception): void
+    {
+        $this->markHistoryFailed($exception->getMessage());
+        Helper::logError('ProcessNotificationReminderJob failed', [__CLASS__, __FUNCTION__], $exception, [
+            'schedule_ids' => $this->scheduleIds,
+        ]);
     }
 
     protected function processSchedule(NotificationSchedule $schedule, string $today, FcmService $fcmService): void

@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\BudgetPlanCycle;
+use App\Http\Helpers\Helper;
 use App\Services\BudgetService;
 use App\Traits\HasJobHistory;
 use Illuminate\Bus\Queueable;
@@ -21,6 +22,14 @@ class GenerateNextCycleJob implements ShouldQueue
     public function __construct(BudgetPlanCycle $currentCycle)
     {
         $this->currentCycle = $currentCycle;
+    }
+
+    public function failed(\Throwable $exception): void
+    {
+        $this->markHistoryFailed($exception->getMessage());
+        Helper::logError('GenerateNextCycleJob failed', [__CLASS__, __FUNCTION__], $exception, [
+            'cycle_uuid' => $this->currentCycle->uuid ?? null,
+        ]);
     }
 
     public function handle(BudgetService $budgetService)

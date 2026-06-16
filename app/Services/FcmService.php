@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\UserDeviceToken;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -37,19 +38,19 @@ class FcmService
 
         foreach ($tokens as $token) {
             try {
+                // Data-only message — no 'notification' key.
+                // This gives the client full control over when and how
+                // to display the notification (foreground + background),
+                // preventing FCM's auto-display which causes duplicates.
                 $message = [
                     'message' => [
                         'token' => $token,
-                        'notification' => [
+                        'data' => array_merge($data, [
                             'title' => $title,
                             'body' => $body,
-                        ],
+                        ]),
                     ],
                 ];
-
-                if (!empty($data)) {
-                    $message['message']['data'] = $data;
-                }
 
                 $response = Http::withToken($accessToken)
                     ->post($url, $message);
@@ -59,11 +60,18 @@ class FcmService
                 } else {
                     $results['failure']++;
                     $results['errors'][] = "Token: {$token}, Error: " . $response->body();
-                    Log::warning('FCM: Failed to send to token', [
-                        'token' => substr($token, 0, 20) . '...',
-                        'status' => $response->status(),
-                        'body' => $response->body(),
-                    ]);
+
+                    // Deactivate tokens that FCM says are no longer valid
+                    if ($response->status() === 404 || str_contains($response->body(), 'UNREGISTERED')) {
+                        UserDeviceToken::where('fcm_token', $token)->update(['is_active' => false]);
+                        Log::info('FCM: Deactivated stale token', ['token' => substr($token, 0, 20) . '...']);
+                    } else {
+                        Log::warning('FCM: Failed to send to token', [
+                            'token' => substr($token, 0, 20) . '...',
+                            'status' => $response->status(),
+                            'body' => $response->body(),
+                        ]);
+                    }
                 }
             } catch (\Exception $e) {
                 $results['failure']++;
@@ -101,7 +109,17 @@ class FcmService
 
             $signature = '';
             $privateKey = openssl_pkey_get_private($credentials['private_key']);
-            openssl_sign("{$header}.{$claim}", $signature, $privateKey, OPENSSL_ALGO_SHA256);
+
+            if (!$privateKey) {
+                Log::error('FCM: Failed to parse private key', ['openssl_error' => openssl_error_string()]);
+                return null;
+            }
+
+            if (!openssl_sign("{$header}.{$claim}", $signature, $privateKey, OPENSSL_ALGO_SHA256)) {
+                Log::error('FCM: Failed to sign JWT', ['openssl_error' => openssl_error_string()]);
+                return null;
+            }
+
             $signature = base64url_encode($signature);
 
             $jwt = "{$header}.{$claim}.{$signature}";

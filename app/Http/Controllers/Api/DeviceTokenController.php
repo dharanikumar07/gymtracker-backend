@@ -26,10 +26,12 @@ class DeviceTokenController extends Controller
             $user = Auth::user();
 
             $token = UserDeviceToken::updateOrCreate(
-                ['fcm_token' => $request->input('fcm_token')],
                 [
                     'user_uuid' => $user->uuid,
                     'device_type' => $request->input('device_type', 'web'),
+                ],
+                [
+                    'fcm_token' => $request->input('fcm_token'),
                     'is_active' => true,
                 ]
             );
