@@ -5,8 +5,6 @@ use App\Http\Controllers\Api\Auth\SocialAuthController;
 use App\Http\Controllers\Api\CronController;
 use App\Http\Controllers\Api\ExpenseLogController;
 use App\Http\Controllers\Api\PhysicalActivityController;
-use App\Http\Controllers\Api\DietController;
-use App\Http\Controllers\Api\DietLogController;
 use App\Http\Controllers\Api\ExpenseController;
 use App\Http\Controllers\Api\PlanController;
 use App\Http\Middleware\VerifyCronSecret;
@@ -36,9 +34,6 @@ Route::prefix('v1')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
         Route::post('/logout', [AuthController::class, 'logout']);
-
-        // Diet Routes
-        require base_path('routes/diet.php');
 
         // Expense Routes
         Route::get('/expenses', [ExpenseLogController::class, 'index']);
