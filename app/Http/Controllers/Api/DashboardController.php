@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\PhysicalActivityTracker;
 use App\Models\ExpenseLog;
+use App\Services\Checklist\ChecklistService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -17,23 +18,33 @@ class DashboardController extends Controller
     {
         try {
             $user = Auth::user();
-            $today = Carbon::today();
-            $startOfWeek = Carbon::now()->startOfWeek();
-            $endOfWeek = Carbon::now()->endOfWeek();
 
             $data = [
                 'user' => $this->getUserData($user),
                 'quick_actions' => $this->getQuickActions(),
                 'today' => $this->getTodayStats($user),
                 'streak' => $this->getStreakData($user),
-                'quick_start' => $this->getQuickStartStatus($user),
                 'recent' => $this->getRecentActivity($user),
+                'weekly_chart' => $this->getWeeklyChart($user),
             ];
 
             return response()->json(['data' => $data], HttpFoundationResponse::HTTP_OK);
 
         } catch (\Error | \Exception $exception) {
             \App\Http\Helpers\Helper::logError('Unable to fetch dashboard data', [__CLASS__, __FUNCTION__], $exception);
+            return response(['errors' => $exception->getMessage()], HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function checklist(ChecklistService $checklistService)
+    {
+        try {
+            $user = Auth::user();
+            $data = $checklistService->getChecklistSteps($user);
+
+            return response()->json(['data' => $data], HttpFoundationResponse::HTTP_OK);
+        } catch (\Error | \Exception $exception) {
+            \App\Http\Helpers\Helper::logError('Unable to fetch checklist data', [__CLASS__, __FUNCTION__], $exception);
             return response(['errors' => $exception->getMessage()], HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -50,9 +61,9 @@ class DashboardController extends Controller
     private function getQuickActions()
     {
         return [
-            ['id' => 'workout', 'label' => 'Workout', 'icon' => 'dumbbell', 'route' => '/workout'],
-            ['id' => 'expense', 'label' => 'Expense', 'icon' => 'wallet', 'route' => '/expenses'],
-            ['id' => 'plan', 'label' => 'Plan', 'icon' => 'clipboard-list', 'route' => '/plan'],
+            ['id' => 'workout', 'label' => 'Workout', 'icon' => 'dumbbell', 'route' => '/track-progress/workout'],
+            ['id' => 'expense', 'label' => 'Expense', 'icon' => 'wallet', 'route' => '/track-expense/log'],
+            ['id' => 'plan', 'label' => 'Plan', 'icon' => 'clipboard-list', 'route' => '/track-progress/routine'],
         ];
     }
 
@@ -126,62 +137,64 @@ class DashboardController extends Controller
         ];
     }
 
-    private function getQuickStartStatus($user)
-    {
-        $hasProfile = !empty($user->name) && !empty($user->email);
-        $hasFitnessPlan = Plan::where('user_uuid', $user->uuid)->where('type', 'physical_activity')->where('is_active', true)->exists();
-        $hasBudgetPlan = Plan::where('user_uuid', $user->uuid)->where('type', 'budget')->where('is_active', true)->exists();
-
-        $items = [
-            ['id' => 'profile', 'title' => 'Complete your profile', 'completed' => $hasProfile],
-            ['id' => 'fitness', 'title' => 'Set up workout plan', 'completed' => $hasFitnessPlan],
-            ['id' => 'budget', 'title' => 'Add budget plan', 'completed' => $hasBudgetPlan],
-        ];
-
-        $completed = count(array_filter($items, fn($i) => $i['completed']));
-        $total = count($items);
-
-        return [
-            'items' => $items,
-            'completed' => $completed,
-            'total' => $total,
-            'percentage' => $total > 0 ? ($completed / $total) * 100 : 0,
-            'is_complete' => $completed === $total,
-        ];
-    }
-
     private function getRecentActivity($user)
     {
-        $recentWorkouts = PhysicalActivityTracker::where('user_uuid', $user->uuid)
+        $recentWorkouts = PhysicalActivityTracker::with('slot')
+            ->where('user_uuid', $user->uuid)
             ->orderBy('activity_date', 'desc')
-            ->limit(2)
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
             ->get()
             ->map(fn($w) => [
                 'type' => 'workout',
-                'title' => $w->slot->exercise_name ?? 'Workout',
-                'value' => ($w->metrics_data['weight'] ?? 0) . ' kg',
+                'title' => 'You logged ' . ($w->slot->exercise_name ?? 'a workout'),
                 'date' => $w->activity_date,
-                'icon' => 'dumbbell',
             ]);
 
-        $recentExpenses = ExpenseLog::with('category')->where('user_uuid', $user->uuid)
+        $recentExpenses = ExpenseLog::with('category')
+            ->where('user_uuid', $user->uuid)
             ->orderBy('expense_date', 'desc')
-            ->limit(2)
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
             ->get()
             ->map(fn($e) => [
                 'type' => 'expense',
-                'title' => $e->category->category_type ?? 'Expense',
-                'value' => '₹' . $e->amount,
+                'title' => 'You logged ' . ($e->category->category_type ?? 'an expense'),
                 'date' => Carbon::parse($e->expense_date),
-                'icon' => 'wallet',
             ]);
 
         $merged = $recentWorkouts
             ->concat($recentExpenses)
             ->sortByDesc('date')
-            ->take(3)
             ->values();
 
         return $merged->toArray();
+    }
+
+    private function getWeeklyChart($user)
+    {
+        $weekStart = Carbon::now()->startOfWeek();
+        $chart = [];
+
+        for ($i = 0; $i < 7; $i++) {
+            $day = $weekStart->copy()->addDays($i);
+
+            $workouts = PhysicalActivityTracker::where('user_uuid', $user->uuid)
+                ->whereDate('activity_date', $day)
+                ->count();
+
+            $expenses = ExpenseLog::where('user_uuid', $user->uuid)
+                ->whereDate('expense_date', $day)
+                ->count();
+
+            $chart[] = [
+                'day' => $day->format('D'),
+                'date' => $day->format('Y-m-d'),
+                'workouts' => $workouts,
+                'expenses' => $expenses,
+            ];
+        }
+
+        return $chart;
     }
 }
