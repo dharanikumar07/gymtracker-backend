@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Helpers\Helper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Response;
 use Symfony\Component\HttpFoundation\Response as HttpFoundationResponse;
 
@@ -79,6 +80,14 @@ class CronController extends Controller
     {
         try {
             $startTime = microtime(true);
+
+            $size = Queue::connection('redis')->size('default');
+
+            if ($size === 0) {
+                return response()->json([
+                    'message' => 'No jobs in queue',
+                ],HttpFoundationResponse::HTTP_OK);
+            }
 
             Artisan::call('queue:work', [
                 'connection' => 'redis',
