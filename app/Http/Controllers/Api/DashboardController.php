@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\PhysicalActivityTracker;
+use App\Models\PhysicalActivitySlot;
 use App\Models\ExpenseLog;
 use App\Services\Checklist\ChecklistService;
 use Illuminate\Http\Request;
@@ -71,10 +72,19 @@ class DashboardController extends Controller
     {
         $fitnessPlan = Plan::where('user_uuid', $user->uuid)->where('type', 'physical_activity')->where('is_active', true)->first();
         $budgetPlan = Plan::where('user_uuid', $user->uuid)->where('type', 'budget')->where('is_active', true)->first();
+        
+        $today = strtolower(Carbon::today()->format('D')); // mon, tue, wed...
 
         $workoutCount = PhysicalActivityTracker::where('user_uuid', $user->uuid)
             ->whereDate('activity_date', Carbon::today())
             ->count();
+
+        $target = $fitnessPlan
+            ? PhysicalActivitySlot::where('user_uuid', $user->uuid)
+                ->where('plan_uuid', $fitnessPlan->uuid)
+                ->where('day', $today)
+                ->count()
+            : 0;
 
         $expenseToday = (int) (ExpenseLog::where('user_uuid', $user->uuid)
             ->whereDate('expense_date', Carbon::today())
@@ -86,8 +96,8 @@ class DashboardController extends Controller
             'fitness' => [
                 'has_plan' => (bool) $fitnessPlan,
                 'completed' => $workoutCount,
-                'target' => 1,
-                'percentage' => min($workoutCount * 100, 100),
+                'target' => $target,
+                'percentage' => $target > 0 ? min(($workoutCount / $target) * 100, 100) : 0,
             ],
             'budget' => [
                 'has_plan' => (bool) $budgetPlan,
