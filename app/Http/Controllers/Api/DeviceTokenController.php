@@ -24,17 +24,29 @@ class DeviceTokenController extends Controller
 
         try {
             $user = Auth::user();
+            $fcmToken = $request->input('fcm_token');
+            $deviceType = $request->input('device_type', 'web');
 
-            $token = UserDeviceToken::updateOrCreate(
-                [
+            // Match on fcm_token (including soft-deleted) to avoid unique constraint violations
+            $token = UserDeviceToken::withTrashed()
+                ->where('fcm_token', $fcmToken)
+                ->first();
+
+            if ($token) {
+                $token->restore();
+                $token->update([
                     'user_uuid' => $user->uuid,
-                    'device_type' => $request->input('device_type', 'web'),
-                ],
-                [
-                    'fcm_token' => $request->input('fcm_token'),
+                    'device_type' => $deviceType,
                     'is_active' => true,
-                ]
-            );
+                ]);
+            } else {
+                $token = UserDeviceToken::create([
+                    'user_uuid' => $user->uuid,
+                    'fcm_token' => $fcmToken,
+                    'device_type' => $deviceType,
+                    'is_active' => true,
+                ]);
+            }
 
             return Response::json([
                 'message' => 'Device token saved successfully',
@@ -68,12 +80,12 @@ class DeviceTokenController extends Controller
         ]);
 
         try {
-            UserDeviceToken::where('fcm_token', $request->input('fcm_token'))
-                ->where('user_uuid', Auth::user()->uuid)
-                ->update(['is_active' => false]);
+            // Keep the token active so the user continues to receive
+            // notifications even after logout. The token is only
+            // deactivated when FCM reports it as UNREGISTERED.
 
             return Response::json([
-                'message' => 'Device token deactivated'
+                'message' => 'Device token retained'
             ], HttpFoundationResponse::HTTP_OK);
 
         } catch (\Exception $e) {
