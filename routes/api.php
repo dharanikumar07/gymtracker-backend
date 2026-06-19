@@ -34,20 +34,7 @@ Route::prefix('v1')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
         Route::post('/logout', [AuthController::class, 'logout']);
-
-        // Expense Routes
-        Route::get('/expenses', [ExpenseLogController::class, 'index']);
-        Route::post('/expenses/log', [ExpenseLogController::class, 'log']);
-        Route::delete('/expenses/{uuid}', [ExpenseLogController::class, 'destroy']);
-
-        // Budget Plan Routes
-        Route::get('/expenses/budget-plan', [ExpenseController::class, 'getBudgetPlans']);
-        Route::post('/expenses/budget-plan', [ExpenseController::class, 'saveBudgetPlan']);
-        Route::get('/expenses/budget-plan/status/{uuid}', [ExpenseController::class, 'getBudgetPlanStatus']);
-        Route::patch('/expenses/budget-plan/{uuid}', [ExpenseController::class, 'updateBudgetPlan']);
-        Route::delete('/expenses/budget-plan/{uuid}', [ExpenseController::class, 'deleteBudgetPlan']);
-        Route::post('/expenses/budget-plan/{uuid}/activate', [ExpenseController::class, 'activateBudgetPlan']);
-
+        
         // Plan Routes
         Route::get('/plans', [PlanController::class, 'getPlans']);
         Route::post('/plans', [PlanController::class, 'savePlan']);
