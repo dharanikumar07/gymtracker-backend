@@ -67,20 +67,20 @@
     <div class="container">
         <div class="content">
             <div class="header">
-                <h1>GymOS</h1>
+                <h1>Vexo</h1>
             </div>
             <div class="body">
                 <p>Hello,</p>
-                <p>Thank you for joining GymOS! Please click the button below to verify your email address and complete your registration.</p>
+                <p>Thank you for joining Vexo! Please click the button below to verify your email address and complete your registration.</p>
                 <div class="button-container">
                     <a href="{{ $url }}" class="button">Verify Email Address</a>
                 </div>
                 <p>If you did not create an account, no further action is required.</p>
-                <p>Regards,<br>The GymOS Team</p>
+                <p>Regards,<br>The Vexo Team</p>
             </div>
         </div>
         <div class="footer">
-            <p>&copy; {{ date('Y') }} GymOS. All rights reserved.</p>
+            <p>&copy; {{ date('Y') }} Vexo. All rights reserved.</p>
         </div>
     </div>
 </body>
