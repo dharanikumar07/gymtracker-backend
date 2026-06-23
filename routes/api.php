@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\Auth\AuthController;
+use App\Http\Controllers\Api\Auth\DemoController;
 use App\Http\Controllers\Api\Auth\SocialAuthController;
 use App\Http\Controllers\Api\CronController;
 use App\Http\Controllers\Api\ExpenseLogController;
@@ -17,6 +18,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/ping', [CronController::class, 'ping']); // No secret needed — just a wake-up call
         Route::post('/min', [CronController::class, 'min'])->middleware(VerifyCronSecret::class);
         Route::post('/twice-per-day', [CronController::class, 'twicePerDay'])->middleware(VerifyCronSecret::class);
+        Route::post('/daily', [CronController::class, 'daily'])->middleware(VerifyCronSecret::class);
         Route::post('/process-jobs', [CronController::class, 'processJobs'])->middleware(VerifyCronSecret::class);
     });
 
@@ -29,6 +31,8 @@ Route::prefix('v1')->group(function () {
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
     Route::get('/verify-email/{uuid}/{hash}', [AuthController::class, 'verify'])->name('verification.verify');
+    Route::get('/demo/generate', [DemoController::class, 'generate']);
+    Route::post('/demo/register', [DemoController::class, 'register']);
 
     // Protected routes
     Route::middleware('auth:sanctum')->group(function () {

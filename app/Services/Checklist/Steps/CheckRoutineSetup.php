@@ -16,7 +16,7 @@ class CheckRoutineSetup
             key: 'routine',
             label: 'Set up your routine',
             enabled: $hasSlots,
-            url: '/track-progress/routine',
+            url: '/track-workouts/setup',
             description: 'Add exercises to your weekly routine',
         );
 

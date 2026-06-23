@@ -27,8 +27,11 @@ class User extends Authenticatable
         'password',
         'is_onboarding_completed',
         'user_fitness_data',
+        'email_verified_at',
         'provider_id',
-        'provider_name'
+        'provider_name',
+        'is_demo',
+        'demo_expires_at'
     ];
 
     /**
@@ -52,7 +55,9 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'user_fitness_data' => 'array',
-            'is_onboarding_completed' => 'boolean'
+            'is_onboarding_completed' => 'boolean',
+            'is_demo' => 'boolean',
+            'demo_expires_at' => 'datetime'
         ];
     }
 

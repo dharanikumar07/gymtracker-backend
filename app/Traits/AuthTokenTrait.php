@@ -28,6 +28,8 @@ trait AuthTokenTrait
                 'uuid' => $user->uuid,
                 'is_email_verified' => !empty($user->email_verified_at),
                 'is_onboarding_completed' => $user->is_onboarding_completed,
+                'is_demo' => (bool) $user->is_demo,
+                'demo_expires_at' => $user->demo_expires_at?->toDateTimeString(),
             ]
         ], 200);
     }

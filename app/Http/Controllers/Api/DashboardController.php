@@ -62,9 +62,9 @@ class DashboardController extends Controller
     private function getQuickActions()
     {
         return [
-            ['id' => 'workout', 'label' => 'Workout', 'icon' => 'dumbbell', 'route' => '/track-progress/workout'],
+            ['id' => 'workout', 'label' => 'Workout', 'icon' => 'dumbbell', 'route' => '/track-workouts/log'],
             ['id' => 'expense', 'label' => 'Expense', 'icon' => 'wallet', 'route' => '/track-expense/log'],
-            ['id' => 'plan', 'label' => 'Plan', 'icon' => 'clipboard-list', 'route' => '/track-progress/routine'],
+            ['id' => 'plan', 'label' => 'Plan', 'icon' => 'clipboard-list', 'route' => '/track-workouts/setup'],
         ];
     }
 
