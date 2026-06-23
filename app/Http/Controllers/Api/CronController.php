@@ -73,6 +73,30 @@ class CronController extends Controller
     }
 
     /**
+     * Cron: runs once per day.
+     * Cleans up expired demo users.
+     */
+    public function daily()
+    {
+        try {
+            Artisan::call('app:cleanup-demo-users');
+
+            return Response::json([
+                'message' => 'Demo cleanup cron executed',
+                'output' => Artisan::output(),
+            ], HttpFoundationResponse::HTTP_OK);
+
+        } catch (\Exception $e) {
+            Helper::logError('Cron daily failed', [__CLASS__, __FUNCTION__], $e, []);
+
+            return Response::json([
+                'message' => 'Cron daily failed',
+                'error' => $e->getMessage(),
+            ], HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
      * Process up to 5 queued jobs from Redis, max 25 seconds.
      * Called by cron-job.org as a separate request to avoid timeouts.
      */

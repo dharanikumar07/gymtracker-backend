@@ -18,6 +18,8 @@ class MeResource extends JsonResource
             'email' => $this->email,
             'is_email_verified' => !empty($this->email_verified_at),
             'is_onboarding_completed' => $this->is_onboarding_completed ?? false,
+            'is_demo' => (bool) $this->is_demo,
+            'demo_expires_at' => $this->demo_expires_at?->toDateTimeString(),
         ];
     }
 }

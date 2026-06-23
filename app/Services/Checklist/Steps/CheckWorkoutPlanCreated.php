@@ -19,7 +19,7 @@ class CheckWorkoutPlanCreated
             key: 'workout_plan',
             label: 'Create a workout plan',
             enabled: $hasPlan,
-            url: '/track-progress/routine',
+            url: '/track-workouts/setup',
             description: 'Set up your fitness plan to track workouts',
         );
 
