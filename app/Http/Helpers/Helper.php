@@ -2,8 +2,8 @@
 
 namespace App\Http\Helpers;
 
-use Bugsnag\BugsnagLaravel\Facades\Bugsnag;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Exception;
 
@@ -27,16 +27,23 @@ class Helper
         // Always log locally
         Log::error([$message => $data]);
 
-        // Report to Bugsnag on staging/production
+        // Report to Sentry on staging/production
         if (!App::environment('local') && $errorObject) {
-            Bugsnag::notifyException($errorObject, function ($report) use ($message, $location, $reference) {
-                $report->setMetaData([
-                    'context' => [
-                        'message' => $message,
-                        'location' => is_array($location) ? implode('@', $location) : $location,
-                        'reference' => $reference,
-                    ],
+            \Sentry\withScope(function (\Sentry\State\Scope $scope) use ($message, $location, $reference, $errorObject) {
+                $userUuid = self::getCurrentUserUuid();
+
+                if ($userUuid) {
+                    $scope->setUser(['id' => $userUuid]);
+                }
+
+                $scope->setContext('error_context', [
+                    'message' => $message,
+                    'location' => is_array($location) ? implode('@', $location) : $location,
+                    'reference' => $reference,
+                    'user_uuid' => $userUuid,
                 ]);
+
+                \Sentry\captureException($errorObject);
             });
         }
     }
@@ -52,27 +59,39 @@ class Helper
         }
 
         $data['message'] = $message;
-
         $data['location'] = $location ?? 'unknown';
 
         // Always log locally
         Log::warning([$message => $data]);
 
-        // Report to Bugsnag on staging/production
+        // Report to Sentry on staging/production
         if (!App::environment('local')) {
-            Bugsnag::notifyException(
-                new Exception($message),
-                function ($report) use ($message, $location, $reference) {
-                    $report->setSeverity('warning');
-                    $report->setMetaData([
-                        'context' => [
-                            'message' => $message,
-                            'location' => is_array($location) ? implode('@', $location) : $location,
-                            'reference' => $reference,
-                        ],
-                    ]);
+            \Sentry\withScope(function (\Sentry\State\Scope $scope) use ($message, $location, $reference) {
+                $userUuid = self::getCurrentUserUuid();
+
+                if ($userUuid) {
+                    $scope->setUser(['id' => $userUuid]);
                 }
-            );
+
+                $scope->setLevel(\Sentry\Severity::warning());
+                $scope->setContext('warning_context', [
+                    'message' => $message,
+                    'location' => is_array($location) ? implode('@', $location) : $location,
+                    'reference' => $reference,
+                    'user_uuid' => $userUuid,
+                ]);
+
+                \Sentry\captureMessage($message);
+            });
+        }
+    }
+
+    private static function getCurrentUserUuid(): ?string
+    {
+        try {
+            return Auth::user()?->uuid;
+        } catch (\Throwable) {
+            return null;
         }
     }
 
@@ -85,5 +104,4 @@ class Helper
     {
         return str_replace('_', ' ', $value);
     }
-
 }

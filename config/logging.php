@@ -123,8 +123,8 @@ return [
             'handler' => NullHandler::class,
         ],
 
-        'bugsnag' => [
-            'driver' => 'bugsnag',
+        'sentry' => [
+            'driver' => 'sentry',
         ],
 
         'emergency' => [
