@@ -284,7 +284,6 @@ class WorkoutsController extends Controller
         try {
             $user = Auth::user();
             $slots = $request->input('slots');
-aadsaksjdskj
             $savedSlots = $this->workoutService->saveWorkoutSlots($user->uuid, $slots);
 
             DB::commit();
