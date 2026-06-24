@@ -2,6 +2,8 @@
 
 namespace App\Http\Helpers;
 
+use Bugsnag\BugsnagLaravel\Facades\Bugsnag;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Log;
 use Exception;
 
@@ -22,7 +24,21 @@ class Helper
             $data['reference'] = $reference;
         }
 
+        // Always log locally
         Log::error([$message => $data]);
+
+        // Report to Bugsnag on staging/production
+        if (!App::environment('local') && $errorObject) {
+            Bugsnag::notifyException($errorObject, function ($report) use ($message, $location, $reference) {
+                $report->setMetaData([
+                    'context' => [
+                        'message' => $message,
+                        'location' => is_array($location) ? implode('@', $location) : $location,
+                        'reference' => $reference,
+                    ],
+                ]);
+            });
+        }
     }
 
     public static function logWarning($message, $location, $reference = [])
@@ -39,7 +55,25 @@ class Helper
 
         $data['location'] = $location ?? 'unknown';
 
+        // Always log locally
         Log::warning([$message => $data]);
+
+        // Report to Bugsnag on staging/production
+        if (!App::environment('local')) {
+            Bugsnag::notifyException(
+                new Exception($message),
+                function ($report) use ($message, $location, $reference) {
+                    $report->setSeverity('warning');
+                    $report->setMetaData([
+                        'context' => [
+                            'message' => $message,
+                            'location' => is_array($location) ? implode('@', $location) : $location,
+                            'reference' => $reference,
+                        ],
+                    ]);
+                }
+            );
+        }
     }
 
     public static function slugifyCategory($value)
