@@ -123,6 +123,10 @@ return [
             'handler' => NullHandler::class,
         ],
 
+        'bugsnag' => [
+            'driver' => 'bugsnag',
+        ],
+
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
         ],
