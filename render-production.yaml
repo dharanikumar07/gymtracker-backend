@@ -1,0 +1,40 @@
+services:
+  - type: web
+    name: gym-tracker-backend-production
+    env: docker
+    plan: free
+    rootDir: gym-tracker-backend
+    dockerfilePath: ./Dockerfile.production
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_KEY
+        generateValue: true
+      - key: LOG_CHANNEL
+        value: errorlog
+
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_URL
+        sync: false
+
+      - key: REDIS_URL
+        sync: false
+      - key: CACHE_STORE
+        value: redis
+      - key: SESSION_DRIVER
+        value: redis
+      - key: QUEUE_CONNECTION
+        value: redis
+
+      - key: FCM_PROJECT_ID
+        value: vexo-c75ba
+      - key: FCM_CREDENTIALS_JSON
+        sync: false
+
+      - key: HORIZON_SECRET
+        sync: false
+      - key: CRON_SECRET
+        sync: false
