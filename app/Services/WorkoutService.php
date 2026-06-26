@@ -91,12 +91,12 @@ class WorkoutService
     {
         return match ($metricsType) {
             'strength' => [
-                'sets' => 3,
+                'sets' => 2,
                 'reps' => 15,
                 'rest' => 30,
             ],
             'timed_sets' => [
-                'sets' => 3,
+                'sets' => 2,
                 'duration' => 40,
                 'duration_unit' => 'seconds',
                 'rest' => 20,
