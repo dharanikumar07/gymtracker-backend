@@ -23,16 +23,16 @@ Route::prefix('v1')->group(function () {
     });
 
     // Public routes
-    Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:10,1');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
     Route::get('/auth/redirect/{provider}', [SocialAuthController::class, 'redirectToProvider']);
     Route::get('/auth/callback/{provider}', [SocialAuthController::class, 'handleProviderCallback']);
-    Route::post('/refresh', [AuthController::class, 'refresh']);
-    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
-    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+    Route::post('/refresh', [AuthController::class, 'refresh'])->middleware('throttle:20,1');
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:5,1');
+    Route::post('/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1');
     Route::get('/verify-email/{uuid}/{hash}', [AuthController::class, 'verify'])->name('verification.verify');
-    Route::get('/demo/generate', [DemoController::class, 'generate']);
-    Route::post('/demo/register', [DemoController::class, 'register']);
+    Route::get('/demo/generate', [DemoController::class, 'generate'])->middleware('throttle:10,1');
+    Route::post('/demo/register', [DemoController::class, 'register'])->middleware('throttle:10,1');
 
     // Protected routes
     Route::middleware('auth:sanctum')->group(function () {
