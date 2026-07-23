@@ -70,7 +70,7 @@ class AuthController extends Controller
             );
 
             return Response::json(
-                ['error' => 'An error occurred', 'message' => $exception->getMessage()],
+                ['error' => 'An error occurred'],
                 HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR
             );
         }
@@ -118,6 +118,11 @@ class AuthController extends Controller
             }
 
             $user = $token->tokenable;
+
+            if (!$user || $user->trashed()) {
+                return Response::json(['message' => 'Invalid or expired refresh token'], 401);
+            }
+
             $token->delete();
 
             return $this->issueTokens($user);
@@ -180,7 +185,7 @@ class AuthController extends Controller
             );
 
             return Response::json(
-                ['error' => 'An error occurred', 'message' => $exception->getMessage()],
+                ['error' => 'An error occurred'],
                 HttpFoundationResponse::HTTP_INTERNAL_SERVER_ERROR
             );
         }
